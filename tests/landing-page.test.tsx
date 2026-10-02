@@ -6,8 +6,8 @@ describe('Softly Landing Page', () => {
   it('renders brand name and navigation CTAs', () => {
     render(<LandingPage />);
     expect(screen.getByText('Softly')).toBeInTheDocument();
-    expect(screen.getAllByText(/launch care hub/i).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText(/helper access portal/i)).toBeInTheDocument();
+    expect(screen.getByText(/register your family space/i)).toBeInTheDocument();
+    expect(screen.getByText(/explore demo space/i)).toBeInTheDocument();
   });
 
   it('renders hero headline with cursive emphasis', () => {

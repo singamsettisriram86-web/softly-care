@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Medication, MedicationLog, Appointment, HelperTask, HelperPayment } from '@/lib/types';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Family, Medication, MedicationLog, Appointment, HelperTask, HelperPayment } from '@/lib/types';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import MedicationAdherence from '@/components/dashboard/MedicationAdherence';
 import MedicationCard from '@/components/dashboard/MedicationCard';
@@ -11,9 +12,16 @@ import AddAppointmentModal from '@/components/dashboard/AddAppointmentModal';
 import HelperTaskList from '@/components/dashboard/HelperTaskList';
 import CashfreePayModal from '@/components/dashboard/CashfreePayModal';
 import WhatsAppSimulatorDrawer from '@/components/dashboard/WhatsAppSimulatorDrawer';
-import { Plus, Pill, Calendar, HeartHandshake, IndianRupee } from 'lucide-react';
+import RegisterFamilyModal from '@/components/RegisterFamilyModal';
+import { Plus, Pill, Calendar, HeartHandshake, Sparkles, UserPlus } from 'lucide-react';
 
-export default function CaregiverDashboard() {
+function CaregiverDashboardContent() {
+  const searchParams = useSearchParams();
+  const queryFamilyId = searchParams?.get('familyId');
+
+  const [families, setFamilies] = useState<Family[]>([]);
+  const [activeFamilyId, setActiveFamilyId] = useState<string>('fam-sharma');
+
   const [medications, setMedications] = useState<Medication[]>([]);
   const [logs, setLogs] = useState<MedicationLog[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -25,28 +33,42 @@ export default function CaregiverDashboard() {
   const [isAddApptOpen, setIsAddApptOpen] = useState(false);
   const [isPayModalOpen, setIsPayModalOpen] = useState(false);
   const [isSimulatorOpen, setIsSimulatorOpen] = useState(false);
-  const [payHelperName, setPayHelperName] = useState('Ramesh Kumar');
+  const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  const [payHelperName, setPayHelperName] = useState('Local Helper');
 
   // Active navigation tab
   const [activeTab, setActiveTab] = useState<'all' | 'medications' | 'appointments' | 'helper'>('all');
 
-  const fetchAllData = async () => {
+  const fetchAllData = async (familyIdToUse?: string) => {
+    const targetFamilyId = familyIdToUse || activeFamilyId;
     try {
-      const [medsRes, logsRes, apptsRes, tasksRes, payRes] = await Promise.all([
-        fetch('/api/medications'),
-        fetch('/api/medications/logs'),
-        fetch('/api/appointments'),
-        fetch('/api/tasks'),
-        fetch('/api/payments'),
+      const [famsRes, medsRes, logsRes, apptsRes, tasksRes, payRes] = await Promise.all([
+        fetch('/api/families'),
+        fetch(`/api/medications?familyId=${targetFamilyId}`),
+        fetch(`/api/medications/logs?familyId=${targetFamilyId}`),
+        fetch(`/api/appointments?familyId=${targetFamilyId}`),
+        fetch(`/api/tasks?familyId=${targetFamilyId}`),
+        fetch(`/api/payments?familyId=${targetFamilyId}`),
       ]);
 
-      const [medsData, logsData, apptsData, tasksData, payData] = await Promise.all([
+      const [famsData, medsData, logsData, apptsData, tasksData, payData] = await Promise.all([
+        famsRes.json(),
         medsRes.json(),
         logsRes.json(),
         apptsRes.json(),
         tasksRes.json(),
         payRes.json(),
       ]);
+
+      if (famsData.success) {
+        setFamilies(famsData.families);
+        if (famsData.families.length > 0 && !familyIdToUse && !queryFamilyId) {
+          const stored = typeof window !== 'undefined' ? localStorage.getItem('softly_active_family_id') : null;
+          if (stored && famsData.families.some((f: Family) => f.id === stored)) {
+            setActiveFamilyId(stored);
+          }
+        }
+      }
 
       if (medsData.success) setMedications(medsData.medications);
       if (logsData.success) setLogs(logsData.logs);
@@ -59,8 +81,24 @@ export default function CaregiverDashboard() {
   };
 
   useEffect(() => {
-    fetchAllData();
-  }, []);
+    if (queryFamilyId) {
+      setActiveFamilyId(queryFamilyId);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('softly_active_family_id', queryFamilyId);
+      }
+      fetchAllData(queryFamilyId);
+    } else {
+      fetchAllData();
+    }
+  }, [queryFamilyId]);
+
+  const handleSelectFamily = (id: string) => {
+    setActiveFamilyId(id);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('softly_active_family_id', id);
+    }
+    fetchAllData(id);
+  };
 
   // Handlers
   const handleLogTaken = async (medId: string) => {
@@ -70,14 +108,15 @@ export default function CaregiverDashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           medication_id: medId,
-          taken_by_name: 'Aditya (Caregiver)',
+          family_id: activeFamilyId,
+          taken_by_name: 'Caregiver',
           status: 'taken',
           channel: 'app',
         }),
       });
       const data = await res.json();
       if (data.success) {
-        fetchAllData();
+        fetchAllData(activeFamilyId);
       }
     } catch (err) {
       console.error(err);
@@ -92,6 +131,7 @@ export default function CaregiverDashboard() {
         body: JSON.stringify({
           medicationId: med.id,
           to: '+919123456789',
+          familyId: activeFamilyId,
         }),
       });
       setIsSimulatorOpen(true);
@@ -109,11 +149,11 @@ export default function CaregiverDashboard() {
     const res = await fetch('/api/medications', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, family_id: activeFamilyId }),
     });
     const result = await res.json();
     if (result.success) {
-      fetchAllData();
+      fetchAllData(activeFamilyId);
     }
   };
 
@@ -128,11 +168,11 @@ export default function CaregiverDashboard() {
     const res = await fetch('/api/appointments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, family_id: activeFamilyId }),
     });
     const result = await res.json();
     if (result.success) {
-      fetchAllData();
+      fetchAllData(activeFamilyId);
     }
   };
 
@@ -144,7 +184,7 @@ export default function CaregiverDashboard() {
     });
     const result = await res.json();
     if (result.success) {
-      fetchAllData();
+      fetchAllData(activeFamilyId);
     }
   };
 
@@ -152,11 +192,16 @@ export default function CaregiverDashboard() {
     const res = await fetch('/api/tasks', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, description, assigned_to: 'Ramesh Kumar' }),
+      body: JSON.stringify({
+        title,
+        description,
+        family_id: activeFamilyId,
+        assigned_to: 'Local Helper',
+      }),
     });
     const result = await res.json();
     if (result.success) {
-      fetchAllData();
+      fetchAllData(activeFamilyId);
     }
   };
 
@@ -165,19 +210,57 @@ export default function CaregiverDashboard() {
     setIsPayModalOpen(true);
   };
 
+  const activeFamily =
+    families.find((f) => f.id === activeFamilyId) ||
+    families[0] || {
+      id: 'fam-sharma',
+      name: 'Sharma Family',
+      invite_code: 'CARE-7892',
+    };
+
   // Metrics
   const todayTakenCount = logs.filter((l) => l.status === 'taken').length;
 
   return (
     <div className="min-h-screen bg-softly-bg text-softly-text pb-20">
-      {/* Sticky Caregiver Header */}
+      {/* Sticky Caregiver Header with Family Switcher */}
       <DashboardHeader
-        familyName="Sharma Family"
-        inviteCode="CARE-7892"
+        familyName={activeFamily.name}
+        inviteCode={activeFamily.invite_code}
+        activeFamilyId={activeFamily.id}
+        families={families}
+        onSelectFamily={handleSelectFamily}
+        onOpenRegister={() => setIsRegisterOpen(true)}
         onOpenSimulator={() => setIsSimulatorOpen(true)}
       />
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-6 sm:pt-8 space-y-8">
+        {/* Banner with Registration Shortcut */}
+        <div className="bg-white/80 border border-stone-200/80 rounded-3xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-soft">
+          <div className="flex items-center gap-2.5">
+            <span className="w-8 h-8 rounded-full bg-softly-coral/40 flex items-center justify-center text-sm">
+              🏡
+            </span>
+            <div>
+              <p className="text-xs font-bold text-stone-800">
+                Viewing Space for: <span className="underline">{activeFamily.name}</span>
+              </p>
+              <p className="text-[11px] text-stone-500">
+                Helper Access Code: <strong>{activeFamily.invite_code}</strong>
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setIsRegisterOpen(true)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold transition-colors"
+          >
+            <UserPlus className="w-3.5 h-3.5" />
+            <span>Register Your Own Family</span>
+          </button>
+        </div>
+
         {/* Adherence Index Progress Banner */}
         <MedicationAdherence
           totalMeds={medications.length}
@@ -258,20 +341,33 @@ export default function CaregiverDashboard() {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {medications.map((med) => {
-                const latestLog = logs.find((l) => l.medication_id === med.id);
-                return (
-                  <MedicationCard
-                    key={med.id}
-                    medication={med}
-                    latestLog={latestLog}
-                    onLogTaken={handleLogTaken}
-                    onTriggerAlert={handleTriggerWhatsApp}
-                  />
-                );
-              })}
-            </div>
+            {medications.length === 0 ? (
+              <div className="bg-white rounded-3xl p-8 text-center border border-stone-200/80 shadow-soft">
+                <p className="text-stone-500 text-sm mb-3">No medications added yet for {activeFamily.name}.</p>
+                <button
+                  type="button"
+                  onClick={() => setIsAddMedOpen(true)}
+                  className="px-5 py-2.5 rounded-full bg-softly-coral text-softly-text text-xs font-bold shadow-soft hover:bg-[#ffa8a2]"
+                >
+                  + Add First Medication
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {medications.map((med) => {
+                  const latestLog = logs.find((l) => l.medication_id === med.id);
+                  return (
+                    <MedicationCard
+                      key={med.id}
+                      medication={med}
+                      latestLog={latestLog}
+                      onLogTaken={handleLogTaken}
+                      onTriggerAlert={handleTriggerWhatsApp}
+                    />
+                  );
+                })}
+              </div>
+            )}
           </section>
         )}
 
@@ -298,11 +394,24 @@ export default function CaregiverDashboard() {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {appointments.map((appt) => (
-                <AppointmentCard key={appt.id} appointment={appt} />
-              ))}
-            </div>
+            {appointments.length === 0 ? (
+              <div className="bg-white rounded-3xl p-8 text-center border border-stone-200/80 shadow-soft">
+                <p className="text-stone-500 text-sm mb-3">No upcoming doctor appointments scheduled.</p>
+                <button
+                  type="button"
+                  onClick={() => setIsAddApptOpen(true)}
+                  className="px-5 py-2.5 rounded-full bg-stone-100 text-stone-700 text-xs font-semibold hover:bg-stone-200"
+                >
+                  + Schedule a Doctor Visit
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {appointments.map((appt) => (
+                  <AppointmentCard key={appt.id} appointment={appt} />
+                ))}
+              </div>
+            )}
           </section>
         )}
 
@@ -350,6 +459,14 @@ export default function CaregiverDashboard() {
       </main>
 
       {/* Modals & Slide-out Drawers */}
+      <RegisterFamilyModal
+        isOpen={isRegisterOpen}
+        onClose={() => setIsRegisterOpen(false)}
+        onSuccess={(newFamilyId) => {
+          handleSelectFamily(newFamilyId);
+        }}
+      />
+
       <AddMedicationModal
         isOpen={isAddMedOpen}
         onClose={() => setIsAddMedOpen(false)}
@@ -366,14 +483,31 @@ export default function CaregiverDashboard() {
         isOpen={isPayModalOpen}
         onClose={() => setIsPayModalOpen(false)}
         helperName={payHelperName}
-        onPaymentSuccess={fetchAllData}
+        onPaymentSuccess={() => fetchAllData(activeFamilyId)}
       />
 
       <WhatsAppSimulatorDrawer
         isOpen={isSimulatorOpen}
         onClose={() => setIsSimulatorOpen(false)}
-        onWebhookTriggered={fetchAllData}
+        onWebhookTriggered={() => fetchAllData(activeFamilyId)}
       />
     </div>
+  );
+}
+
+export default function CaregiverDashboard() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-softly-bg flex items-center justify-center p-8">
+          <div className="text-center space-y-3">
+            <div className="w-10 h-10 rounded-full bg-softly-coral animate-ping mx-auto" />
+            <p className="text-xs font-semibold text-stone-600">Opening Your Care Sanctuary...</p>
+          </div>
+        </div>
+      }
+    >
+      <CaregiverDashboardContent />
+    </Suspense>
   );
 }

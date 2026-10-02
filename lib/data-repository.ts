@@ -194,12 +194,97 @@ export class MemoryDataRepository {
   ];
 
   // Family & Members
+  async getAllFamilies(): Promise<Family[]> {
+    return this.families;
+  }
+
   async getFamily(id: string): Promise<Family | undefined> {
     return this.families.find((f) => f.id === id);
   }
 
+  async findFamilyByCode(inviteCode: string): Promise<Family | undefined> {
+    return this.families.find(
+      (f) => f.invite_code.toUpperCase() === inviteCode.trim().toUpperCase()
+    );
+  }
+
   async getMembers(familyId: string): Promise<FamilyMember[]> {
     return this.members.filter((m) => m.family_id === familyId);
+  }
+
+  async registerFamily(params: {
+    familyName: string;
+    caregiverName: string;
+    caregiverPhone?: string;
+    caregiverCity?: string;
+    fatherName?: string;
+    motherName?: string;
+    parentsCity?: string;
+    helperName?: string;
+    helperPhone?: string;
+  }): Promise<{ family: Family; members: FamilyMember[] }> {
+    const familyId = `fam-${Date.now()}`;
+    const codeNum = Math.floor(1000 + Math.random() * 9000);
+    const inviteCode = `CARE-${codeNum}`;
+
+    const newFamily: Family = {
+      id: familyId,
+      name: params.familyName.trim(),
+      invite_code: inviteCode,
+      created_at: new Date().toISOString(),
+    };
+    this.families.push(newFamily);
+
+    const newMembers: FamilyMember[] = [];
+
+    // Caregiver
+    newMembers.push({
+      id: `mem-${Date.now()}-cg`,
+      family_id: familyId,
+      role: 'caregiver',
+      name: params.caregiverName.trim(),
+      phone: params.caregiverPhone || '+919999999999',
+      city: params.caregiverCity || 'Bangalore',
+    });
+
+    // Father
+    if (params.fatherName?.trim()) {
+      newMembers.push({
+        id: `mem-${Date.now()}-fa`,
+        family_id: familyId,
+        role: 'elder',
+        name: `${params.fatherName.trim()} (Father)`,
+        phone: '+919123456789',
+        city: params.parentsCity || 'Hometown',
+      });
+    }
+
+    // Mother
+    if (params.motherName?.trim()) {
+      newMembers.push({
+        id: `mem-${Date.now()}-mo`,
+        family_id: familyId,
+        role: 'elder',
+        name: `${params.motherName.trim()} (Mother)`,
+        phone: '+919123456788',
+        city: params.parentsCity || 'Hometown',
+      });
+    }
+
+    // Helper
+    if (params.helperName?.trim()) {
+      newMembers.push({
+        id: `mem-${Date.now()}-hp`,
+        family_id: familyId,
+        role: 'helper',
+        name: `${params.helperName.trim()} (Local Helper)`,
+        phone: params.helperPhone || '+919888877777',
+        city: params.parentsCity || 'Hometown',
+      });
+    }
+
+    this.members.push(...newMembers);
+    return { family: newFamily, members: newMembers };
   }
 
   // Medications

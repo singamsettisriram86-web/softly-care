@@ -1,12 +1,17 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { Heart, Bell, UserCheck, Share2, Sparkles } from 'lucide-react';
+import { Family } from '@/lib/types';
+import { Bell, UserCheck, Share2, ChevronDown, Plus, Users } from 'lucide-react';
 
 interface Props {
   familyName: string;
   inviteCode: string;
+  activeFamilyId?: string;
+  families?: Family[];
+  onSelectFamily?: (familyId: string) => void;
+  onOpenRegister?: () => void;
   unreadCount?: number;
   onOpenSimulator: () => void;
 }
@@ -14,10 +19,15 @@ interface Props {
 export default function DashboardHeader({
   familyName,
   inviteCode,
+  activeFamilyId,
+  families = [],
+  onSelectFamily,
+  onOpenRegister,
   unreadCount = 2,
   onOpenSimulator,
 }: Props) {
-  const [copied, setCopied] = React.useState(false);
+  const [copied, setCopied] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const handleCopyLink = () => {
     if (typeof window !== 'undefined') {
@@ -44,18 +54,76 @@ export default function DashboardHeader({
 
           <div className="h-5 w-[1px] bg-stone-200 hidden sm:block" />
 
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="font-bold text-base sm:text-lg text-softly-text tracking-tight">
-                {familyName}
-              </h1>
-              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-softly-sage text-stone-700">
-                Caregiver Hub
-              </span>
-            </div>
-            <p className="text-[11px] text-stone-400 hidden sm:block">
-              Connected: Bangalore ↔ Jaipur
-            </p>
+          {/* Interactive Family Dropdown Switcher */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+              className="flex items-center gap-1.5 text-left p-1 rounded-xl hover:bg-stone-100 transition-colors"
+            >
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <h1 className="font-bold text-base sm:text-lg text-softly-text tracking-tight">
+                    {familyName}
+                  </h1>
+                  <ChevronDown className="w-3.5 h-3.5 text-stone-400" />
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-softly-sage text-stone-700">
+                    Caregiver Hub
+                  </span>
+                  <span className="text-[10px] text-stone-400 hidden sm:inline">
+                    Click to switch family
+                  </span>
+                </div>
+              </div>
+            </button>
+
+            {/* Dropdown Menu */}
+            {dropdownOpen && (
+              <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-2xl border border-stone-200 shadow-floating p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+                <span className="text-[10px] uppercase font-bold text-stone-400 px-3 py-1 block">
+                  Switch Family Space
+                </span>
+
+                <div className="space-y-1 mb-2">
+                  {families.map((f) => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => {
+                        if (onSelectFamily) onSelectFamily(f.id);
+                        setDropdownOpen(false);
+                      }}
+                      className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition-colors ${
+                        f.id === activeFamilyId
+                          ? 'bg-softly-sage/70 font-bold text-stone-900'
+                          : 'hover:bg-stone-50 text-stone-700'
+                      }`}
+                    >
+                      <span>{f.name}</span>
+                      <span className="text-[10px] text-stone-400 font-mono">
+                        {f.invite_code}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="pt-2 border-t border-stone-100">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDropdownOpen(false);
+                      if (onOpenRegister) onOpenRegister();
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-emerald-800 hover:bg-emerald-50 flex items-center gap-2 transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>+ Register New Family Space</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -72,16 +140,16 @@ export default function DashboardHeader({
             <span className="hidden sm:inline">
               {copied ? 'Link Copied!' : `Helper PIN: ${inviteCode}`}
             </span>
-            <span className="sm:hidden">{copied ? 'Copied' : 'PIN'}</span>
+            <span className="sm:hidden">{copied ? 'Copied' : inviteCode}</span>
           </button>
 
           {/* Quick link to Helper View */}
           <Link
-            href="/helper"
+            href={`/helper?pin=${inviteCode}`}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-stone-200 hover:border-stone-300 text-stone-600 hover:text-stone-900 text-xs font-medium transition-colors"
           >
             <UserCheck className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Switch to Helper View</span>
+            <span className="hidden sm:inline">Helper View</span>
             <span className="sm:hidden">Helper</span>
           </Link>
 
@@ -93,8 +161,7 @@ export default function DashboardHeader({
             title="Open Live WhatsApp & Reminders Simulator"
           >
             <Bell className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">WhatsApp Simulator</span>
-            <span className="sm:hidden">WhatsApp</span>
+            <span className="hidden sm:inline">WhatsApp</span>
             {unreadCount > 0 && (
               <span className="w-2 h-2 rounded-full bg-emerald-200 animate-pulse" />
             )}
