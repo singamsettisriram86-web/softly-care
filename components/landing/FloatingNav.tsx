@@ -26,7 +26,7 @@ export default function FloatingNav() {
         {/* Links */}
         <div className="hidden md:flex items-center gap-6 text-[14px] font-medium text-stone-600">
           <Link href="#scenarios" className="hover:text-softly-text transition-colors">
-            Daily Rhythm
+            How It Works
           </Link>
           <Link href="#preview" className="hover:text-softly-text transition-colors">
             Experience

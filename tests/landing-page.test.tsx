@@ -18,8 +18,8 @@ describe('Softly Landing Page', () => {
 
   it('renders scenario scroll section', () => {
     render(<LandingPage />);
-    expect(screen.getByText(/daily living room rhythm/i)).toBeInTheDocument();
-    expect(screen.getByText(/metformin reminder sent to dad’s whatsapp/i)).toBeInTheDocument();
+    expect(screen.getByText(/how it works every day/i)).toBeInTheDocument();
+    expect(screen.getByText(/morning medicine on whatsapp/i)).toBeInTheDocument();
   });
 
   it('renders 3-phone experience preview with pulsing coral button', () => {
