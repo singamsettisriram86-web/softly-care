@@ -8,12 +8,18 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   onWebhookTriggered?: () => void;
+  familyId?: string;
+  parentName?: string;
+  parentPhone?: string;
 }
 
 export default function WhatsAppSimulatorDrawer({
   isOpen,
   onClose,
   onWebhookTriggered,
+  familyId = '',
+  parentName = 'Parents',
+  parentPhone = '',
 }: Props) {
   const [messages, setMessages] = useState<WhatsAppMessage[]>([]);
   const [customReply, setCustomReply] = useState('');
@@ -21,7 +27,7 @@ export default function WhatsAppSimulatorDrawer({
 
   const fetchMessages = async () => {
     try {
-      const res = await fetch('/api/reminders/messages');
+      const res = await fetch(`/api/reminders/messages?familyId=${encodeURIComponent(familyId)}`);
       const data = await res.json();
       if (data.success) {
         setMessages(data.messages);
@@ -35,7 +41,7 @@ export default function WhatsAppSimulatorDrawer({
     if (isOpen) {
       fetchMessages();
     }
-  }, [isOpen]);
+  }, [isOpen, familyId]);
 
   if (!isOpen) return null;
 
@@ -46,9 +52,9 @@ export default function WhatsAppSimulatorDrawer({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          from: '+919123456789',
+          from: parentPhone || '+919123456789',
           body: replyText,
-          familyId: 'fam-sharma',
+          familyId,
         }),
       });
       const data = await res.json();
@@ -78,8 +84,8 @@ export default function WhatsAppSimulatorDrawer({
               👨‍🦳
             </div>
             <div>
-              <h3 className="font-semibold text-sm leading-tight">Dad (Ram Prakash Sharma)</h3>
-              <p className="text-[11px] text-emerald-200">+91 91234 56789 · WhatsApp</p>
+              <h3 className="font-semibold text-sm leading-tight">{parentName}</h3>
+              <p className="text-[11px] text-emerald-200">{parentPhone} · WhatsApp</p>
             </div>
           </div>
 

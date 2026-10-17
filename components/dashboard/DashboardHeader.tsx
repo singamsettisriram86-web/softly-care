@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { Family } from '@/lib/types';
 import { Bell, UserCheck, Share2, ChevronDown, Plus, Users } from 'lucide-react';
+import ProfileDropdown from '@/components/ProfileDropdown';
 
 interface Props {
   familyName: string;
@@ -44,9 +45,12 @@ export default function DashboardHeader({
         {/* Left: Brand & Family Switcher */}
         <div className="flex items-center gap-3">
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 rounded-full bg-softly-coral flex items-center justify-center shadow-sm">
-              <span className="w-2.5 h-2.5 rounded-full bg-white" />
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.png"
+              alt="Softly Logo"
+              className="w-8 h-8 rounded-xl object-contain shadow-xs transition-transform duration-300 group-hover:scale-105"
+            />
             <span className="font-bold text-lg text-softly-text hidden sm:inline tracking-tight">
               Softly
             </span>
@@ -63,10 +67,10 @@ export default function DashboardHeader({
             >
               <div>
                 <div className="flex items-center gap-1.5">
-                  <h1 className="font-bold text-base sm:text-lg text-softly-text tracking-tight">
+                  <h1 className="font-bold text-sm sm:text-lg text-softly-text tracking-tight truncate max-w-[120px] sm:max-w-xs md:max-w-none">
                     {familyName}
                   </h1>
-                  <ChevronDown className="w-3.5 h-3.5 text-stone-400" />
+                  <ChevronDown className="w-3.5 h-3.5 text-stone-400 shrink-0" />
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-softly-sage text-stone-700">
@@ -166,6 +170,10 @@ export default function DashboardHeader({
               <span className="w-2 h-2 rounded-full bg-emerald-200 animate-pulse" />
             )}
           </button>
+
+          {/* Profile */}
+          <div className="h-5 w-[1px] bg-stone-200 hidden sm:block" />
+          <ProfileDropdown variant="header" />
         </div>
       </div>
     </header>

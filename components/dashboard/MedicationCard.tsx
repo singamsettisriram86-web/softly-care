@@ -42,9 +42,16 @@ export default function MedicationCard({
               <h3 className="font-bold text-lg text-softly-text tracking-tight">
                 {medication.name}
               </h3>
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-stone-100 text-stone-600">
-                {medication.dosage}
-              </span>
+              <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-stone-100 text-stone-600">
+                  {medication.dosage}
+                </span>
+                {medication.for_member_name && (
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#FFE4E1] text-[#8C3330] border border-[#FFB7B2]/40">
+                    For: {medication.for_member_name}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -69,7 +76,7 @@ export default function MedicationCard({
         )}
       </div>
 
-      <div className="pt-3 border-t border-stone-100 flex items-center justify-between gap-2">
+      <div className="pt-3 border-t border-stone-100 flex flex-wrap items-center justify-between gap-2.5">
         {/* Status Indicator */}
         <div className="text-xs">
           {isTakenToday ? (
@@ -84,7 +91,7 @@ export default function MedicationCard({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
           {/* Test WhatsApp trigger button */}
           <button
             type="button"

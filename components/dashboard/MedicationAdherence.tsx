@@ -6,9 +6,10 @@ import { ShieldCheck, TrendingUp, Sparkles } from 'lucide-react';
 interface Props {
   totalMeds: number;
   takenTodayCount: number;
+  title?: string;
 }
 
-export default function MedicationAdherence({ totalMeds, takenTodayCount }: Props) {
+export default function MedicationAdherence({ totalMeds, takenTodayCount, title }: Props) {
   const percentage = totalMeds > 0 ? Math.round((takenTodayCount / totalMeds) * 100) : 100;
 
   return (
@@ -23,7 +24,7 @@ export default function MedicationAdherence({ totalMeds, takenTodayCount }: Prop
               Peace of Mind Index
             </span>
             <h3 className="text-xl font-bold text-softly-text tracking-tight">
-              Today’s Medication Adherence
+              {title || 'Today’s Medication Adherence'}
             </h3>
           </div>
         </div>

@@ -48,9 +48,16 @@ export default function AppointmentCard({ appointment }: Props) {
             </h3>
             <p className="text-sm font-semibold text-stone-700">{appointment.doctor_name}</p>
           </div>
-          <span className="text-xs px-2.5 py-1 rounded-full bg-softly-lavender text-stone-700 font-medium">
-            {appointment.status}
-          </span>
+          <div className="flex flex-col items-end gap-1.5 shrink-0">
+            {appointment.for_member_name && (
+              <span className="text-[10px] px-2.5 py-1 rounded-full bg-softly-coral/15 text-softly-coral font-semibold border border-softly-coral/25">
+                For: {appointment.for_member_name}
+              </span>
+            )}
+            <span className="text-xs px-2.5 py-1 rounded-full bg-softly-lavender text-stone-700 font-medium">
+              {appointment.status}
+            </span>
+          </div>
         </div>
 
         <div className="space-y-1.5 my-3 text-xs text-softly-muted">
@@ -83,7 +90,7 @@ export default function AppointmentCard({ appointment }: Props) {
         )}
       </div>
 
-      <div className="pt-3 border-t border-stone-100 flex items-center justify-between gap-2">
+      <div className="pt-3 border-t border-stone-100 flex flex-wrap items-center justify-between gap-2">
         {/* Google Calendar Link */}
         <a
           href={gCalUrl}

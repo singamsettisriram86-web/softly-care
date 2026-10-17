@@ -8,8 +8,11 @@ export async function POST(req: NextRequest) {
     const {
       medicationId,
       to = '+919123456789',
-      familyId = 'fam-sharma',
+      familyId,
     } = body;
+    if (!familyId) {
+      return NextResponse.json({ success: false, error: 'familyId is required' }, { status: 400 });
+    }
 
     let medName = 'Prescribed Medication';
     let dosage = 'As advised';

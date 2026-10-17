@@ -7,8 +7,9 @@ export async function POST(req: NextRequest) {
     const {
       amountINR,
       purpose = 'Helper Caregiving Fee',
-      helperName = 'Ramesh Kumar',
-      familyId = 'fam-sharma',
+      helperName = 'Local Helper',
+      helperUpi,
+      familyId,
     } = body;
 
     if (!amountINR || isNaN(amountINR) || Number(amountINR) <= 0) {
@@ -22,6 +23,7 @@ export async function POST(req: NextRequest) {
       amountINR: Number(amountINR),
       purpose,
       helperName,
+      helperUpi,
       familyId,
     });
 

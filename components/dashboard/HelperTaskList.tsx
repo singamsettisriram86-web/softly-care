@@ -1,14 +1,18 @@
 'use client';
 
 import React, { useState } from 'react';
-import { HelperTask } from '@/lib/types';
+import { FamilyMember, HelperTask } from '@/lib/types';
 import { CheckCircle2, Circle, IndianRupee, Plus, Calendar, User } from 'lucide-react';
 
 interface Props {
   tasks: HelperTask[];
   onToggleTask: (taskId: string, completed: boolean) => Promise<void>;
-  onAddTask: (title: string, description?: string) => Promise<void>;
-  onOpenPayModal: (helperName: string) => void;
+  onAddTask: (title: string, description?: string, forMemberId?: string, forMemberName?: string) => Promise<void>;
+  onOpenPayModal: (helperName: string, helperUpi?: string) => void;
+  helperName?: string;
+  helperCity?: string;
+  helperUpi?: string;
+  elderMembers?: FamilyMember[];
 }
 
 export default function HelperTaskList({
@@ -16,11 +20,18 @@ export default function HelperTaskList({
   onToggleTask,
   onAddTask,
   onOpenPayModal,
+  helperName = 'Local Helper',
+  helperCity,
+  helperUpi,
+  elderMembers = [],
 }: Props) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const selectedMember = elderMembers.find((m) => m.id === selectedMemberId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,9 +39,15 @@ export default function HelperTaskList({
 
     setLoading(true);
     try {
-      await onAddTask(title.trim(), description.trim());
+      await onAddTask(
+        title.trim(),
+        description.trim() || undefined,
+        selectedMember?.id,
+        selectedMember?.name,
+      );
       setTitle('');
       setDescription('');
+      setSelectedMemberId(null);
       setShowAddForm(false);
     } finally {
       setLoading(false);
@@ -46,22 +63,22 @@ export default function HelperTaskList({
             Local Coordination
           </span>
           <h2 className="text-xl font-bold text-softly-text tracking-tight">
-            Helper Tasks & Compensation
+            Helper Tasks &amp; Compensation
           </h2>
           <p className="text-xs text-softly-muted mt-0.5">
-            Tasks assigned to trusted local helper (Ramesh Kumar, Jaipur).
+            Tasks assigned to trusted local helper ({helperName}{helperCity ? `, ${helperCity}` : ''}).
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Cashfree Pay Helper Button */}
+          {/* Pay Helper Button */}
           <button
             type="button"
-            onClick={() => onOpenPayModal('Ramesh Kumar')}
+            onClick={() => onOpenPayModal(helperName, helperUpi)}
             className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-softly-coral hover:bg-[#ffa8a2] active:scale-95 text-softly-text text-xs font-semibold shadow-soft transition-all"
           >
             <IndianRupee className="w-3.5 h-3.5" />
-            <span>Pay Helper (Cashfree)</span>
+            <span>Pay Helper</span>
           </button>
 
           {/* Add Task Button */}
@@ -82,6 +99,33 @@ export default function HelperTaskList({
           onSubmit={handleSubmit}
           className="mb-6 p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-3 animate-in fade-in duration-200"
         >
+          {/* Member Picker */}
+          {elderMembers.length > 0 && (
+            <div>
+              <p className="text-[11px] font-semibold text-stone-500 mb-2">For which person?</p>
+              <div className="flex flex-wrap gap-2">
+                {elderMembers.map((m) => {
+                  const isSelected = selectedMemberId === m.id;
+                  return (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => setSelectedMemberId(isSelected ? null : m.id)}
+                      className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
+                        isSelected
+                          ? 'bg-softly-coral border-softly-coral text-white shadow-sm'
+                          : 'bg-white border-stone-200 text-stone-600 hover:border-softly-coral/60'
+                      }`}
+                    >
+                      {m.name}
+                      {m.relation_type ? ` · ${m.relation_type}` : ''}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <input
             type="text"
             required
@@ -100,7 +144,7 @@ export default function HelperTaskList({
           <div className="flex justify-end gap-2">
             <button
               type="button"
-              onClick={() => setShowAddForm(false)}
+              onClick={() => { setShowAddForm(false); setSelectedMemberId(null); }}
               className="px-3 py-1.5 rounded-full text-stone-500 text-xs hover:bg-stone-200"
             >
               Cancel
@@ -118,6 +162,9 @@ export default function HelperTaskList({
 
       {/* Task List */}
       <div className="space-y-3">
+        {tasks.length === 0 && (
+          <p className="text-xs text-stone-400 text-center py-4">No tasks yet. Add one above.</p>
+        )}
         {tasks.map((task) => (
           <div
             key={task.id}
@@ -140,14 +187,21 @@ export default function HelperTaskList({
               )}
             </button>
 
-            <div className="flex-1">
-              <h4
-                className={`text-sm font-semibold tracking-tight ${
-                  task.completed ? 'line-through text-stone-400' : 'text-stone-800'
-                }`}
-              >
-                {task.title}
-              </h4>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-2">
+                <h4
+                  className={`text-sm font-semibold tracking-tight ${
+                    task.completed ? 'line-through text-stone-400' : 'text-stone-800'
+                  }`}
+                >
+                  {task.title}
+                </h4>
+                {task.for_member_name && (
+                  <span className="shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-softly-coral/15 text-softly-coral border border-softly-coral/25">
+                    For: {task.for_member_name}
+                  </span>
+                )}
+              </div>
 
               {task.description && (
                 <p className="text-xs text-softly-muted mt-1 leading-relaxed">

@@ -1,12 +1,25 @@
 'use client';
 
-import React, { useState } from 'react';
-import { X, IndianRupee, ShieldCheck, CheckCircle2, ArrowRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import {
+  X,
+  ShieldCheck,
+  CheckCircle2,
+  ArrowRight,
+  QrCode,
+  Smartphone,
+  CreditCard,
+  ExternalLink,
+  Copy,
+  Check,
+} from 'lucide-react';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   helperName: string;
+  helperUpi?: string;
+  familyId?: string;
   onPaymentSuccess: () => void;
 }
 
@@ -14,20 +27,47 @@ export default function CashfreePayModal({
   isOpen,
   onClose,
   helperName,
+  helperUpi: initialHelperUpi,
+  familyId,
   onPaymentSuccess,
 }: Props) {
+  const [paymentMethod, setPaymentMethod] = useState<'upi' | 'cashfree'>('upi');
   const [amount, setAmount] = useState('500');
-  const [purpose, setPurpose] = useState('Clinic accompaniment & medicine pickup');
-  const [step, setStep] = useState<'form' | 'checkout' | 'success'>('form');
+  const [purpose, setPurpose] = useState('Weekly Caregiving & Medicine Pickup');
+  const [helperUpi, setHelperUpi] = useState(initialHelperUpi || '');
+  const [step, setStep] = useState<'form' | 'pay' | 'success'>('form');
   const [orderData, setOrderData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (initialHelperUpi) {
+        setHelperUpi(initialHelperUpi);
+      }
+      setStep('form');
+      setOrderData(null);
+      setError('');
+    }
+  }, [isOpen, initialHelperUpi]);
+
+  // Load Cashfree JS SDK
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !document.getElementById('cashfree-js')) {
+      const script = document.createElement('script');
+      script.id = 'cashfree-js';
+      script.src = 'https://sdk.cashfree.com/js/v3/cashfree.js';
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, []);
 
   if (!isOpen) return null;
 
   const presets = ['300', '500', '1500', '3000'];
 
-  const handleInitiateCashfree = async (e: React.FormEvent) => {
+  const handleInitiate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
       setError('Please enter a valid amount');
@@ -44,14 +84,16 @@ export default function CashfreePayModal({
           amountINR: Number(amount),
           purpose,
           helperName,
+          helperUpi,
+          familyId,
         }),
       });
 
       const data = await res.json();
-      if (!data.success) throw new Error(data.error || 'Failed to create Cashfree order');
+      if (!data.success) throw new Error(data.error || 'Failed to initiate payment');
 
       setOrderData(data);
-      setStep('checkout');
+      setStep('pay');
     } catch (err: any) {
       setError(err.message || 'Payment initiation failed');
     } finally {
@@ -59,7 +101,7 @@ export default function CashfreePayModal({
     }
   };
 
-  const handleSimulatePaymentSuccess = async () => {
+  const handleConfirmUpiPaid = async () => {
     setLoading(true);
     try {
       const res = await fetch('/api/payments/cashfree-verify', {
@@ -77,6 +119,36 @@ export default function CashfreePayModal({
     }
   };
 
+  const handleLaunchCashfreeCheckout = () => {
+    if (typeof window !== 'undefined' && (window as any).Cashfree && orderData?.paymentSessionId) {
+      try {
+        const cashfree = (window as any).Cashfree({
+          mode: orderData.isProduction ? 'production' : 'sandbox',
+        });
+        cashfree.checkout({
+          paymentSessionId: orderData.paymentSessionId,
+          redirectTarget: '_modal',
+        }).then(() => {
+          handleConfirmUpiPaid();
+        });
+      } catch (err) {
+        console.warn('Cashfree SDK launch fallback to verification:', err);
+        handleConfirmUpiPaid();
+      }
+    } else {
+      // Direct completion verification
+      handleConfirmUpiPaid();
+    }
+  };
+
+  const copyUpiId = () => {
+    if (orderData?.directUpi?.upiId) {
+      navigator.clipboard.writeText(orderData.directUpi.upiId);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   const handleResetAndClose = () => {
     setStep('form');
     setOrderData(null);
@@ -89,7 +161,7 @@ export default function CashfreePayModal({
       aria-modal="true"
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm animate-in fade-in duration-200"
     >
-      <div className="bg-white rounded-4xl max-w-md w-full p-6 sm:p-8 border border-stone-200 shadow-2xl relative">
+      <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 border border-stone-200 shadow-2xl relative max-h-[92vh] overflow-y-auto">
         <button
           type="button"
           onClick={handleResetAndClose}
@@ -98,18 +170,47 @@ export default function CashfreePayModal({
           <X className="w-4 h-4" />
         </button>
 
+        {/* STEP 1: FORM */}
         {step === 'form' && (
           <div>
-            <div className="mb-6">
-              <span className="text-xs uppercase font-bold text-softly-muted tracking-wider">
-                Cashfree Payments
+            <div className="mb-5">
+              <span className="text-[11px] uppercase font-bold text-softly-muted tracking-wider block mb-1">
+                Helper Compensation
               </span>
-              <h2 className="text-2xl font-bold text-softly-text tracking-tight flex items-center gap-1.5">
+              <h2 className="text-xl font-bold text-stone-800 tracking-tight">
                 Pay Helper: {helperName}
               </h2>
-              <p className="text-xs text-softly-muted mt-1">
-                Disburse verified compensation, medicine expenses, or monthly care stipends.
+              <p className="text-xs text-stone-500 mt-1">
+                Choose direct instant UPI to helper&apos;s bank, or card/netbanking via Cashfree.
               </p>
+            </div>
+
+            {/* Payment Method Selector */}
+            <div className="grid grid-cols-2 gap-2 mb-5 p-1 bg-stone-100/80 rounded-2xl border border-stone-200">
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('upi')}
+                className={`py-2.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                  paymentMethod === 'upi'
+                    ? 'bg-white text-stone-900 shadow-xs border border-stone-200/80'
+                    : 'text-stone-500 hover:text-stone-800'
+                }`}
+              >
+                <Smartphone className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Direct UPI (0% Fee)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('cashfree')}
+                className={`py-2.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                  paymentMethod === 'cashfree'
+                    ? 'bg-white text-stone-900 shadow-xs border border-stone-200/80'
+                    : 'text-stone-500 hover:text-stone-800'
+                }`}
+              >
+                <CreditCard className="w-3.5 h-3.5 text-purple-600" />
+                <span>Cashfree Gateway</span>
+              </button>
             </div>
 
             {error && (
@@ -118,7 +219,7 @@ export default function CashfreePayModal({
               </div>
             )}
 
-            <form onSubmit={handleInitiateCashfree} className="space-y-4">
+            <form onSubmit={handleInitiate} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-stone-700 mb-1">
                   Amount in INR (₹)
@@ -133,12 +234,12 @@ export default function CashfreePayModal({
                     min="1"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    className="w-full pl-9 pr-4 py-3 rounded-2xl bg-stone-50 border border-stone-200 text-lg font-bold text-stone-900 focus:outline-none focus:ring-2 focus:ring-softly-coral/60"
+                    className="w-full pl-9 pr-4 py-2.5 rounded-2xl bg-stone-50 border border-stone-200 text-lg font-bold text-stone-900 focus:outline-none focus:ring-1 focus:ring-stone-400"
                   />
                 </div>
 
                 {/* Quick Presets */}
-                <div className="flex gap-2 mt-2">
+                <div className="flex flex-wrap gap-2 mt-2">
                   {presets.map((val) => (
                     <button
                       key={val}
@@ -146,7 +247,7 @@ export default function CashfreePayModal({
                       onClick={() => setAmount(val)}
                       className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
                         amount === val
-                          ? 'bg-softly-coral text-softly-text border-softly-coral'
+                          ? 'bg-stone-900 text-white border-stone-900'
                           : 'bg-stone-50 text-stone-600 border-stone-200 hover:bg-stone-100'
                       }`}
                     >
@@ -156,38 +257,62 @@ export default function CashfreePayModal({
                 </div>
               </div>
 
+              {/* Helper UPI ID field if UPI mode is selected */}
+              {paymentMethod === 'upi' && (
+                <div>
+                  <label className="block text-xs font-semibold text-stone-700 mb-1">
+                    Helper&apos;s UPI ID / VPA
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={helperUpi}
+                    onChange={(e) => setHelperUpi(e.target.value)}
+                    placeholder="e.g. 9988776655@upi or name@okaxis"
+                    className="w-full px-4 py-2 rounded-2xl bg-stone-50 border border-stone-200 text-xs text-stone-800 focus:outline-none focus:ring-1 focus:ring-stone-400"
+                  />
+                  <p className="text-[11px] text-stone-400 mt-1">
+                    Direct transfer from your GPay / PhonePe to helper&apos;s bank. Zero intermediary.
+                  </p>
+                </div>
+              )}
+
               <div>
                 <label className="block text-xs font-semibold text-stone-700 mb-1">
-                  Payment Purpose / Note
+                  Purpose / Note
                 </label>
                 <input
                   type="text"
                   required
                   value={purpose}
                   onChange={(e) => setPurpose(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-2xl bg-stone-50 border border-stone-200 text-xs text-stone-800 focus:outline-none focus:ring-2 focus:ring-softly-coral/60"
+                  className="w-full px-4 py-2 rounded-2xl bg-stone-50 border border-stone-200 text-xs text-stone-800 focus:outline-none focus:ring-1 focus:ring-stone-400"
                 />
               </div>
 
-              <div className="p-3 bg-stone-50 rounded-2xl border border-stone-200/60 text-[11px] text-stone-500 flex items-center gap-2">
+              <div className="p-3 bg-stone-50 rounded-2xl border border-stone-200 text-[11px] text-stone-600 flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                <span>Powered by Cashfree Payments Gateway (Sandbox ready).</span>
+                <span>
+                  {paymentMethod === 'upi'
+                    ? '100% direct bank-to-bank via NPCI UPI protocol.'
+                    : 'Powered by Cashfree Payments Gateway (Live Production).'}
+                </span>
               </div>
 
               <div className="pt-2 flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={handleResetAndClose}
-                  className="px-5 py-2.5 rounded-full text-stone-600 text-xs font-medium hover:bg-stone-100"
+                  className="px-4 py-2 rounded-full text-stone-600 text-xs font-medium hover:bg-stone-100"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-6 py-2.5 rounded-full bg-softly-coral text-softly-text text-xs font-bold shadow-soft hover:bg-[#ffa8a2] active:scale-95 transition-all flex items-center gap-1.5"
+                  className="px-5 py-2.5 rounded-full bg-[#292524] text-white text-xs font-bold hover:bg-stone-800 active:scale-95 transition-all flex items-center gap-1.5 shadow-sm"
                 >
-                  <span>{loading ? 'Creating Order...' : `Proceed to Pay ₹${amount}`}</span>
+                  <span>{loading ? 'Setting up...' : `Proceed to Pay ₹${amount}`}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -195,79 +320,144 @@ export default function CashfreePayModal({
           </div>
         )}
 
-        {step === 'checkout' && (
+        {/* STEP 2: PAY (UPI OR CASHFREE) */}
+        {step === 'pay' && orderData && (
           <div className="text-center py-2 animate-in fade-in">
-            {/* Cashfree Simulated Checkout Dialog */}
-            <div className="w-12 h-12 rounded-2xl bg-[#0F2942] mx-auto mb-4 flex items-center justify-center text-white font-bold text-sm">
-              CF
-            </div>
-            <h3 className="font-bold text-lg text-stone-900 mb-1">Cashfree Checkout Simulator</h3>
-            <p className="text-xs text-stone-500 mb-4">
-              Order ID: <code className="text-[11px] bg-stone-100 px-1.5 py-0.5 rounded">{orderData?.orderId}</code>
-            </p>
+            {paymentMethod === 'upi' ? (
+              /* --- DIRECT UPI VIEW --- */
+              <div>
+                <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-3">
+                  <Smartphone className="w-5 h-5 text-emerald-700" />
+                </div>
+                <h3 className="text-lg font-bold text-stone-800">
+                  Scan or Pay via UPI App
+                </h3>
+                <p className="text-xs text-stone-500 mb-4">
+                  Paying ₹{orderData.amount} directly to <strong className="text-stone-800 font-semibold">{helperName}</strong>
+                </p>
 
-            <div className="bg-stone-50 rounded-2xl p-4 text-left border border-stone-200 mb-5 space-y-2 text-xs">
-              <div className="flex justify-between">
-                <span className="text-stone-500">Payee:</span>
-                <span className="font-semibold text-stone-800">{helperName}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-stone-500">Purpose:</span>
-                <span className="font-semibold text-stone-800">{purpose}</span>
-              </div>
-              <div className="flex justify-between pt-2 border-t border-stone-200 text-sm">
-                <span className="font-bold text-stone-700">Total Amount:</span>
-                <span className="font-extrabold text-stone-900">₹{orderData?.amount}</span>
-              </div>
-            </div>
+                {/* QR Code */}
+                <div className="inline-block p-3 bg-white border border-stone-200 rounded-2xl shadow-xs mb-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={orderData.directUpi.qrCodeUrl}
+                    alt={`UPI QR Code for ${helperName}`}
+                    className="w-44 h-44 mx-auto rounded-lg"
+                  />
+                  <span className="text-[11px] font-semibold text-stone-700 block mt-2">
+                    Scan with any UPI app to pay {helperName}
+                  </span>
+                </div>
 
-            <div className="space-y-2 mb-6 text-left">
-              <div className="p-3 rounded-xl border border-emerald-300 bg-emerald-50/50 flex items-center justify-between cursor-pointer">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">📱</span>
-                  <div>
-                    <p className="text-xs font-bold text-stone-800">Instant UPI Payment</p>
-                    <p className="text-[10px] text-stone-500">Google Pay, PhonePe, Paytm</p>
+                {/* UPI ID copy */}
+                <div className="flex flex-col items-center justify-center gap-1 mb-5">
+                  <span className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">
+                    {helperName}&apos;s UPI ID
+                  </span>
+                  <div className="flex items-center justify-center gap-2">
+                    <code className="text-xs px-2.5 py-1 bg-stone-100 rounded-lg text-stone-800 font-mono font-medium">
+                      {orderData.directUpi.upiId}
+                    </code>
+                    <button
+                      type="button"
+                      onClick={copyUpiId}
+                      className="p-1 rounded-md hover:bg-stone-100 text-stone-500 text-xs flex items-center gap-1"
+                      title="Copy UPI ID"
+                    >
+                      {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
                   </div>
                 </div>
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
-              </div>
-            </div>
 
-            <button
-              type="button"
-              disabled={loading}
-              onClick={handleSimulatePaymentSuccess}
-              className="w-full py-3.5 rounded-full bg-[#0F2942] hover:bg-[#1b3d5e] text-white font-semibold text-xs shadow-soft active:scale-95 transition-all flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                'Processing...'
-              ) : (
-                <>
-                  <span>Confirm Test Payment of ₹{orderData?.amount}</span>
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                </>
-              )}
-            </button>
+                {/* Action buttons */}
+                <div className="space-y-2">
+                  <a
+                    href={orderData.directUpi.upiUri}
+                    className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Open UPI App on Phone</span>
+                  </a>
+
+                  <button
+                    type="button"
+                    onClick={handleConfirmUpiPaid}
+                    disabled={loading}
+                    className="w-full py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold transition-all flex items-center justify-center gap-1.5"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>{loading ? 'Recording...' : '✓ I Have Sent Payment via UPI'}</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* --- CASHFREE PRODUCTION GATEWAY VIEW --- */
+              <div>
+                <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center mx-auto mb-3">
+                  <CreditCard className="w-5 h-5 text-purple-700" />
+                </div>
+                <h3 className="text-lg font-bold text-stone-800">
+                  Cashfree Gateway Checkout
+                </h3>
+                <p className="text-xs text-stone-500 mb-4">
+                  Pay ₹{orderData.amount} securely via Cards, NetBanking, or Wallet
+                </p>
+
+                <div className="bg-stone-50 p-4 rounded-2xl border border-stone-200 text-left text-xs mb-5 space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-stone-500">Order ID:</span>
+                    <span className="font-mono text-stone-800 font-semibold">{orderData.orderId}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-stone-500">Gateway Mode:</span>
+                    <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 text-[10px] font-bold uppercase">
+                      {orderData.isProduction ? 'Live Production' : 'Sandbox Test'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-stone-500">Beneficiary:</span>
+                    <span className="font-semibold text-stone-800">{helperName}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-stone-500">Amount:</span>
+                    <span className="font-bold text-stone-900">₹{orderData.amount}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={handleLaunchCashfreeCheckout}
+                    disabled={loading}
+                    className="w-full py-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                  >
+                    <span>{loading ? 'Processing...' : 'Open Cashfree Live Payment →'}</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
+        {/* STEP 3: SUCCESS */}
         {step === 'success' && (
-          <div className="text-center py-4 animate-in zoom-in-95 duration-200">
-            <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-700 mx-auto mb-4 flex items-center justify-center">
-              <CheckCircle2 className="w-8 h-8" />
+          <div className="text-center py-4 animate-in fade-in">
+            <div className="w-14 h-14 rounded-full bg-emerald-100 border border-emerald-200 flex items-center justify-center mx-auto mb-3">
+              <CheckCircle2 className="w-7 h-7 text-emerald-600" />
             </div>
-            <h3 className="font-bold text-xl text-stone-900 mb-1">Payment Successful!</h3>
-            <p className="text-xs text-softly-muted mb-6">
-              ₹{amount} has been paid to <strong>{helperName}</strong> for {purpose}.
+            <h3 className="text-xl font-bold text-stone-800 mb-1">
+              Payment Confirmed!
+            </h3>
+            <p className="text-xs text-stone-500 max-w-xs mx-auto mb-6">
+              ₹{amount} has been successfully recorded for {helperName}. A confirmation has been logged in Supabase.
             </p>
 
             <button
               type="button"
               onClick={handleResetAndClose}
-              className="px-8 py-3 rounded-full bg-softly-coral text-softly-text text-xs font-bold shadow-soft hover:bg-[#ffa8a2] transition-colors"
+              className="w-full py-2.5 rounded-full bg-[#292524] text-white text-xs font-semibold hover:bg-stone-800 transition-colors"
             >
-              Done & Return to Dashboard
+              Done &amp; Return to Dashboard
             </button>
           </div>
         )}

@@ -7,7 +7,17 @@ export interface CreateOrderParams {
   customerEmail?: string;
   purpose: string;
   helperName: string;
+  helperUpi?: string;
   familyId?: string;
+}
+
+export interface DirectUpiDetails {
+  upiId: string;
+  payeeName: string;
+  amount: number;
+  note: string;
+  upiUri: string;
+  qrCodeUrl: string;
 }
 
 export class CashfreeService {
@@ -25,24 +35,63 @@ export class CashfreeService {
     return Boolean(this.appId && this.secretKey);
   }
 
+  getMode(): 'production' | 'sandbox' {
+    return this.isProduction ? 'production' : 'sandbox';
+  }
+
   getBaseUrl(): string {
     return this.isProduction
       ? 'https://api.cashfree.com/pg'
       : 'https://sandbox.cashfree.com/pg';
   }
 
+  generateDirectUpi(params: {
+    helperUpi?: string;
+    helperPhone?: string;
+    helperName: string;
+    amountINR: number;
+    purpose: string;
+  }): DirectUpiDetails {
+    const cleanPhone = (params.helperPhone || '9988776655').replace(/[^0-9]/g, '').slice(-10);
+    const upiId = params.helperUpi?.trim() || `${cleanPhone}@upi`;
+    const payeeName = params.helperName || 'Helper';
+    const note = encodeURIComponent(params.purpose || 'Caregiver Helper Payment');
+    const encodedName = encodeURIComponent(payeeName);
+
+    // Standard NPCI UPI URI
+    const upiUri = `upi://pay?pa=${upiId}&pn=${encodedName}&am=${params.amountINR}&tn=${note}&cu=INR`;
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=10&data=${encodeURIComponent(upiUri)}`;
+
+    return {
+      upiId,
+      payeeName,
+      amount: params.amountINR,
+      note: params.purpose,
+      upiUri,
+      qrCodeUrl,
+    };
+  }
+
   async createOrder(params: CreateOrderParams) {
     const {
       amountINR,
       customerPhone = '9876543210',
-      customerName = 'Aditya Sharma',
-      customerEmail = 'aditya@softlycare.local',
+      customerName = 'Family Caregiver',
+      customerEmail = 'caregiver@softly.local',
       purpose,
       helperName,
+      helperUpi,
       familyId = 'fam-sharma',
     } = params;
 
     const orderId = `CF_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const directUpi = this.generateDirectUpi({
+      helperUpi,
+      helperPhone: customerPhone,
+      helperName,
+      amountINR,
+      purpose,
+    });
 
     if (this.isConfigured()) {
       try {
@@ -88,16 +137,21 @@ export class CashfreeService {
             orderId: data.order_id,
             paymentSessionId: data.payment_session_id,
             amount: amountINR,
-            isSandbox: !this.isProduction,
+            mode: this.getMode(),
+            isProduction: this.isProduction,
             simulated: false,
+            directUpi,
           };
+        } else {
+          const errData = await response.text();
+          console.warn('Cashfree live response not ok:', errData);
         }
       } catch (err: any) {
         console.warn('Live Cashfree call failed, falling back to simulated order:', err.message);
       }
     }
 
-    // Interactive Local Dev / Simulation Mode
+    // Simulation / local fallback
     const paymentSessionId = `session_sim_${orderId}`;
     await memoryDataRepository.createPaymentRecord({
       family_id: familyId,
@@ -114,8 +168,10 @@ export class CashfreeService {
       orderId,
       paymentSessionId,
       amount: amountINR,
-      isSandbox: true,
+      mode: this.getMode(),
+      isProduction: false,
       simulated: true,
+      directUpi,
     };
   }
 

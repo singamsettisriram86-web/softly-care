@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { X, Heart, Sparkles, User, MapPin, Phone, ShieldCheck, ArrowRight } from 'lucide-react';
+import GoogleSignInButton from './GoogleSignInButton';
 
 interface Props {
   isOpen: boolean;
@@ -23,6 +24,7 @@ export default function RegisterFamilyModal({ isOpen, onClose, onSuccess }: Prop
 
   const [helperName, setHelperName] = useState('');
   const [helperPhone, setHelperPhone] = useState('');
+  const [helperUpi, setHelperUpi] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -55,6 +57,7 @@ export default function RegisterFamilyModal({ isOpen, onClose, onSuccess }: Prop
           parentsCity: parentsCity.trim(),
           helperName: helperName.trim(),
           helperPhone: helperPhone.trim(),
+          helperUpi: helperUpi.trim(),
         }),
       });
 
@@ -116,10 +119,34 @@ export default function RegisterFamilyModal({ isOpen, onClose, onSuccess }: Prop
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Section 1: Your Details (Caregiver) */}
+          {/* Section 1: Sign in with Google */}
+          <div className="bg-[#FAF8F5] p-4 rounded-2xl border border-stone-200/60 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-softly-muted uppercase tracking-wider block">
+                1. Sign in with Google
+              </span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-semibold">
+                One-Click
+              </span>
+            </div>
+            <p className="text-xs text-stone-500">
+              Sign in with your Google account to link your caregiver profile.
+            </p>
+            <GoogleSignInButton
+              onUserAuthenticated={(u) => {
+                setCaregiverName(u.name);
+                if (!familyName) {
+                  const surname = u.name.split(' ').slice(-1)[0] || u.name;
+                  setFamilyName(`${surname} Family`);
+                }
+              }}
+            />
+          </div>
+
+          {/* Section 2: Caregiver Details */}
           <div className="bg-[#FAF8F5] p-4 rounded-2xl border border-stone-200/60 space-y-3">
             <span className="text-[11px] font-bold text-softly-muted uppercase tracking-wider block">
-              1. Your Details (The Caregiver)
+              2. Caregiver Contact & Location
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
@@ -238,6 +265,21 @@ export default function RegisterFamilyModal({ isOpen, onClose, onSuccess }: Prop
                   className="w-full px-3.5 py-2 rounded-xl bg-white border border-stone-200 text-xs text-stone-800 focus:outline-none focus:ring-1 focus:ring-softly-coral"
                 />
               </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-stone-700 mb-1">
+                Helper UPI ID (for instant direct payments)
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. suresh@upi or 9888877777@paytm"
+                value={helperUpi}
+                onChange={(e) => setHelperUpi(e.target.value)}
+                className="w-full px-3.5 py-2 rounded-xl bg-white border border-stone-200 text-xs text-stone-800 focus:outline-none focus:ring-1 focus:ring-softly-coral"
+              />
+              <p className="text-[11px] text-stone-400 mt-1">
+                Will be prefilled automatically when sending helper payments.
+              </p>
             </div>
             <p className="text-[11px] text-stone-400">
               You can also add or change helpers anytime later from the dashboard.

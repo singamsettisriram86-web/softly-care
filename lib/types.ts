@@ -1,10 +1,18 @@
 export type UserRole = 'caregiver' | 'elder' | 'helper';
 
+export type SubscriptionStatus = 'trial' | 'active' | 'past_due' | 'canceled' | 'expired';
+
 export interface Family {
   id: string;
   name: string;
   invite_code: string;
   created_at: string;
+  trial_ends_at?: string;
+  subscription_status?: SubscriptionStatus;
+  subscription_plan?: 'monthly_299' | 'yearly_2499' | null;
+  subscription_id?: string;
+  whatsapp_quota_used?: number;
+  whatsapp_quota_limit?: number;
 }
 
 export interface FamilyMember {
@@ -15,6 +23,8 @@ export interface FamilyMember {
   name: string;
   phone: string;
   city: string;
+  upi_id?: string;
+  relation_type?: string; // e.g. 'Father', 'Mother', 'Brother', 'Sister', 'Others'
 }
 
 export interface Medication {
@@ -26,6 +36,8 @@ export interface Medication {
   instructions?: string;
   active: boolean;
   created_at: string;
+  for_member_id?: string;   // which family member this is for
+  for_member_name?: string; // display name (denormalized for speed)
 }
 
 export type MedicationStatus = 'taken' | 'missed' | 'skipped';
@@ -53,6 +65,8 @@ export interface Appointment {
   helper_name?: string;
   status: AppointmentStatus;
   notes?: string;
+  for_member_id?: string;   // which family member this appointment is for
+  for_member_name?: string; // display name (denormalized for speed)
 }
 
 export interface HelperTask {
@@ -64,6 +78,8 @@ export interface HelperTask {
   completed: boolean;
   assigned_to: string;
   created_at: string;
+  for_member_id?: string;   // which family member this task is for
+  for_member_name?: string; // display name (denormalized for speed)
 }
 
 export type PaymentStatus = 'created' | 'paid' | 'failed';

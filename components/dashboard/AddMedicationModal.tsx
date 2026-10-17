@@ -2,26 +2,50 @@
 
 import React, { useState } from 'react';
 import { X, Plus, Clock } from 'lucide-react';
+import { FamilyMember } from '@/lib/types';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
+  careMembers?: FamilyMember[]; // elder members to assign medication to
+  defaultMemberId?: string;
+  defaultHelperName?: string;
   onAdd: (data: {
     name: string;
     dosage: string;
     schedule: string[];
     instructions: string;
+    for_member_id?: string;
+    for_member_name?: string;
   }) => Promise<void>;
 }
 
-export default function AddMedicationModal({ isOpen, onClose, onAdd }: Props) {
+export default function AddMedicationModal({
+  isOpen,
+  onClose,
+  onAdd,
+  careMembers = [],
+  defaultMemberId,
+  defaultHelperName,
+}: Props) {
   const [name, setName] = useState('');
   const [dosage, setDosage] = useState('');
   const [selectedTimes, setSelectedTimes] = useState<string[]>(['08:00']);
   const [customTime, setCustomTime] = useState('');
   const [instructions, setInstructions] = useState('');
+  const [forMemberId, setForMemberId] = useState<string>(defaultMemberId || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Sync default member when modal opens
+  React.useEffect(() => {
+    if (isOpen && defaultMemberId) {
+      setForMemberId(defaultMemberId);
+    }
+  }, [isOpen, defaultMemberId]);
+
+  // Only show elder (care) members in the selector
+  const elderMembers = careMembers.filter((m) => m.role === 'elder');
 
   if (!isOpen) return null;
 
@@ -32,20 +56,37 @@ export default function AddMedicationModal({ isOpen, onClose, onAdd }: Props) {
     { label: 'Bedtime (10:00 PM)', time: '22:00' },
   ];
 
+  const formatTimeDisplay = (timeStr: string) => {
+    const parts = timeStr.split(':');
+    if (parts.length < 2) return timeStr;
+    const h = parseInt(parts[0], 10);
+    const m = parts[1];
+    if (isNaN(h)) return timeStr;
+    const period = h >= 12 ? 'PM' : 'AM';
+    const displayHour = h % 12 || 12;
+    return `${displayHour}:${m} ${period}`;
+  };
+
   const togglePreset = (t: string) => {
     if (selectedTimes.includes(t)) {
       if (selectedTimes.length > 1) {
         setSelectedTimes(selectedTimes.filter((x) => x !== t));
       }
     } else {
-      setSelectedTimes([...selectedTimes, t]);
+      setSelectedTimes([...selectedTimes, t].sort());
     }
   };
 
   const addCustomTime = () => {
     if (customTime && !selectedTimes.includes(customTime)) {
-      setSelectedTimes([...selectedTimes, customTime]);
+      setSelectedTimes([...selectedTimes, customTime].sort());
       setCustomTime('');
+    }
+  };
+
+  const removeTime = (t: string) => {
+    if (selectedTimes.length > 1) {
+      setSelectedTimes(selectedTimes.filter((x) => x !== t));
     }
   };
 
@@ -56,6 +97,8 @@ export default function AddMedicationModal({ isOpen, onClose, onAdd }: Props) {
       return;
     }
 
+    const selectedMember = elderMembers.find((m) => m.id === forMemberId);
+
     setLoading(true);
     setError('');
     try {
@@ -64,12 +107,16 @@ export default function AddMedicationModal({ isOpen, onClose, onAdd }: Props) {
         dosage: dosage.trim(),
         schedule: selectedTimes,
         instructions: instructions.trim(),
+        for_member_id: selectedMember?.id,
+        for_member_name: selectedMember?.name,
       });
       // reset form
       setName('');
       setDosage('');
       setSelectedTimes(['08:00']);
+      setCustomTime('');
       setInstructions('');
+      setForMemberId('');
       onClose();
     } catch (err: any) {
       setError(err.message || 'Failed to add medication');
@@ -119,7 +166,7 @@ export default function AddMedicationModal({ isOpen, onClose, onAdd }: Props) {
             <input
               type="text"
               required
-              placeholder="e.g. Metformin or Amlodipine"
+              placeholder="e.g. Metformin or Telmisartan"
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full px-4 py-2.5 rounded-2xl bg-stone-50 border border-stone-200 text-sm text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-softly-coral/60"
@@ -140,11 +187,52 @@ export default function AddMedicationModal({ isOpen, onClose, onAdd }: Props) {
             />
           </div>
 
+          {/* Who is this for? */}
+          {elderMembers.length > 0 && (
+            <div>
+              <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+                Who is this for?
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setForMemberId('')}
+                  className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
+                    forMemberId === ''
+                      ? 'border-transparent text-stone-800'
+                      : 'bg-white border-stone-200 text-stone-500 hover:border-stone-300'
+                  }`}
+                  style={forMemberId === '' ? { background: '#E8EFE8', borderColor: '#D6E4D6' } : {}}
+                >
+                  Everyone / General
+                </button>
+                {elderMembers.map((m) => {
+                  const label = m.relation_type ? `${m.name} (${m.relation_type})` : m.name;
+                  return (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => setForMemberId(m.id)}
+                      className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
+                        forMemberId === m.id
+                          ? 'border-transparent text-stone-800'
+                          : 'bg-white border-stone-200 text-stone-500 hover:border-stone-300'
+                      }`}
+                      style={forMemberId === m.id ? { background: '#FFB7B2', borderColor: '#FFB7B2' } : {}}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <div>
             <label className="block text-xs font-semibold text-stone-700 mb-1.5">
               Daily Schedule
             </label>
-            <div className="grid grid-cols-2 gap-2 mb-2">
+            <div className="grid grid-cols-2 gap-2 mb-3">
               {presetTimes.map((preset) => {
                 const active = selectedTimes.includes(preset.time);
                 return (
@@ -165,20 +253,54 @@ export default function AddMedicationModal({ isOpen, onClose, onAdd }: Props) {
             </div>
 
             {/* Custom Time Input */}
-            <div className="flex gap-2">
-              <input
-                type="time"
-                value={customTime}
-                onChange={(e) => setCustomTime(e.target.value)}
-                className="px-3 py-1.5 rounded-2xl bg-stone-50 border border-stone-200 text-xs text-stone-800"
-              />
-              <button
-                type="button"
-                onClick={addCustomTime}
-                className="px-3 py-1.5 rounded-2xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-medium"
-              >
-                + Add Custom Time
-              </button>
+            <div className="p-3 bg-stone-50/80 rounded-2xl border border-stone-200/80 mb-3 space-y-2">
+              <span className="text-[11px] font-semibold text-stone-600 block">
+                Add Any Specific Time:
+              </span>
+              <div className="flex gap-2">
+                <input
+                  type="time"
+                  value={customTime}
+                  onChange={(e) => setCustomTime(e.target.value)}
+                  className="px-3 py-1.5 rounded-xl bg-white border border-stone-200 text-xs text-stone-800 font-medium"
+                />
+                <button
+                  type="button"
+                  onClick={addCustomTime}
+                  disabled={!customTime}
+                  className="px-3 py-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold transition-all disabled:opacity-40"
+                >
+                  + Add This Time
+                </button>
+              </div>
+            </div>
+
+            {/* Active Schedule Badges Display */}
+            <div>
+              <span className="text-[11px] font-semibold text-stone-500 block mb-1.5">
+                Scheduled Reminder Times ({selectedTimes.length}):
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {selectedTimes.map((t) => (
+                  <span
+                    key={t}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold"
+                  >
+                    <Clock className="w-3 h-3 text-emerald-600" />
+                    <span>{formatTimeDisplay(t)}</span>
+                    {selectedTimes.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeTime(t)}
+                        className="w-3.5 h-3.5 rounded-full hover:bg-emerald-200 flex items-center justify-center text-emerald-700 font-bold"
+                        title="Remove time"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
 

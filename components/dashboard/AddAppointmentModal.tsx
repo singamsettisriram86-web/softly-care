@@ -1,11 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Calendar, MapPin, User, FileText } from 'lucide-react';
+import { X } from 'lucide-react';
+import { FamilyMember } from '@/lib/types';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
+  defaultHelperName?: string;
+  elderMembers?: FamilyMember[];
   onAdd: (data: {
     title: string;
     doctor_name: string;
@@ -13,21 +16,26 @@ interface Props {
     scheduled_at: string;
     helper_name: string;
     notes: string;
+    for_member_id?: string;
+    for_member_name?: string;
   }) => Promise<void>;
 }
 
-export default function AddAppointmentModal({ isOpen, onClose, onAdd }: Props) {
+export default function AddAppointmentModal({ isOpen, onClose, defaultHelperName, elderMembers = [], onAdd }: Props) {
   const [title, setTitle] = useState('');
   const [doctorName, setDoctorName] = useState('');
   const [clinicAddress, setClinicAddress] = useState('');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('11:00');
-  const [helperName, setHelperName] = useState('Ramesh Kumar');
+  const [helperName, setHelperName] = useState(defaultHelperName || 'Local Helper');
   const [notes, setNotes] = useState('');
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   if (!isOpen) return null;
+
+  const selectedMember = elderMembers.find((m) => m.id === selectedMemberId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,6 +55,8 @@ export default function AddAppointmentModal({ isOpen, onClose, onAdd }: Props) {
         scheduled_at: scheduledAt,
         helper_name: helperName.trim(),
         notes: notes.trim(),
+        for_member_id: selectedMember?.id,
+        for_member_name: selectedMember?.name,
       });
       // reset
       setTitle('');
@@ -54,6 +64,7 @@ export default function AddAppointmentModal({ isOpen, onClose, onAdd }: Props) {
       setClinicAddress('');
       setDate('');
       setNotes('');
+      setSelectedMemberId(null);
       onClose();
     } catch (err: any) {
       setError(err.message || 'Failed to add appointment');
@@ -96,6 +107,36 @@ export default function AddAppointmentModal({ isOpen, onClose, onAdd }: Props) {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+
+          {/* Member Picker */}
+          {elderMembers.length > 0 && (
+            <div>
+              <label className="block text-xs font-semibold text-stone-700 mb-2">
+                Who is this appointment for?
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {elderMembers.map((m) => {
+                  const isSelected = selectedMemberId === m.id;
+                  return (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => setSelectedMemberId(isSelected ? null : m.id)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                        isSelected
+                          ? 'bg-softly-coral border-softly-coral text-white shadow-sm'
+                          : 'bg-stone-50 border-stone-200 text-stone-600 hover:border-softly-coral/60'
+                      }`}
+                    >
+                      {m.name}
+                      {m.relation_type ? ` · ${m.relation_type}` : ''}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <div>
             <label className="block text-xs font-semibold text-stone-700 mb-1">
               Visit Purpose / Title
@@ -112,7 +153,7 @@ export default function AddAppointmentModal({ isOpen, onClose, onAdd }: Props) {
 
           <div>
             <label className="block text-xs font-semibold text-stone-700 mb-1">
-              Doctor Name & Specialization
+              Doctor Name &amp; Specialization
             </label>
             <input
               type="text"
@@ -183,7 +224,7 @@ export default function AddAppointmentModal({ isOpen, onClose, onAdd }: Props) {
             </label>
             <textarea
               rows={2}
-              placeholder="e.g. Take fasting blood sugar & previous lipid profile reports"
+              placeholder="e.g. Take fasting blood sugar &amp; previous lipid profile reports"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className="w-full px-4 py-2 rounded-2xl bg-stone-50 border border-stone-200 text-sm text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-softly-coral/60"

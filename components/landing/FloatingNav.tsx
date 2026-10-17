@@ -1,12 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
-import RegisterFamilyModal from '@/components/RegisterFamilyModal';
+import ProfileDropdown from '@/components/ProfileDropdown';
 
 export default function FloatingNav() {
-  const [isRegisterOpen, setIsRegisterOpen] = useState(false);
-
   return (
     <>
       <header className="fixed top-4 left-0 right-0 z-40 flex justify-center px-4">
@@ -16,9 +14,12 @@ export default function FloatingNav() {
         >
           {/* Brand / Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-7 h-7 rounded-full bg-softly-coral flex items-center justify-center shadow-sm transition-transform duration-300 group-hover:scale-105">
-              <span className="w-2 h-2 rounded-full bg-white" />
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.png"
+              alt="Softly Logo"
+              className="w-8 h-8 rounded-xl object-contain shadow-xs transition-transform duration-300 group-hover:scale-105"
+            />
             <span className="font-semibold text-lg tracking-tight text-softly-text">
               Softly
             </span>
@@ -44,28 +45,9 @@ export default function FloatingNav() {
           </div>
 
           {/* Action CTAs */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            <button
-              type="button"
-              onClick={() => setIsRegisterOpen(true)}
-              className="text-[13px] font-semibold text-stone-700 hover:text-stone-950 px-3 py-1.5 rounded-full hover:bg-stone-100 transition-colors"
-            >
-              + Register
-            </button>
-            <Link
-              href="/dashboard"
-              className="bg-softly-text text-white hover:bg-stone-700 active:scale-95 text-[13px] sm:text-[14px] font-medium px-4 sm:px-5 py-2 rounded-full transition-all duration-200 shadow-sm"
-            >
-              Launch Hub
-            </Link>
-          </div>
+          <ProfileDropdown variant="nav" />
         </nav>
       </header>
-
-      <RegisterFamilyModal
-        isOpen={isRegisterOpen}
-        onClose={() => setIsRegisterOpen(false)}
-      />
     </>
   );
 }

@@ -10,7 +10,14 @@ export interface SendReminderParams {
 }
 
 export class WhatsAppService {
-  private isConfigured(): boolean {
+  private isMetaConfigured(): boolean {
+    return Boolean(
+      process.env.META_ACCESS_TOKEN &&
+        process.env.META_PHONE_NUMBER_ID
+    );
+  }
+
+  private isTwilioConfigured(): boolean {
     return Boolean(
       process.env.TWILIO_ACCOUNT_SID &&
         process.env.TWILIO_AUTH_TOKEN &&
@@ -18,20 +25,115 @@ export class WhatsAppService {
     );
   }
 
+  private formatPhoneForMeta(phone: string): string {
+    let clean = phone.replace(/[^\d]/g, '');
+    // If it's a 10-digit Indian number without country code, prefix 91
+    if (clean.length === 10 && /^[6-9]/.test(clean)) {
+      clean = '91' + clean;
+    }
+    return clean;
+  }
+
   async sendMedicationReminder(params: SendReminderParams) {
     const { to, medicationName, dosage, time, medicationId, familyId = 'fam-sharma' } = params;
-    const body = `💊 Reminder: Time for *${medicationName}* (${dosage}) at ${time}.\nReply *DONE* once taken.`;
 
-    if (this.isConfigured()) {
+    // Check trial & subscription firewall
+    if (familyId) {
+      const fam = await memoryDataRepository.getFamily(familyId);
+      if (fam) {
+        const now = new Date();
+        const trialEnd = fam.trial_ends_at ? new Date(fam.trial_ends_at) : null;
+        const isTrialValid = trialEnd && now < trialEnd;
+        const isSubscribed = fam.subscription_status === 'active';
+
+        if (!isTrialValid && !isSubscribed) {
+          return {
+            success: false,
+            simulated: false,
+            error: 'Subscription required. Free 3-day trial has concluded for this family space.',
+            code: 'TRIAL_EXPIRED',
+          };
+        }
+
+        const quotaUsed = fam.whatsapp_quota_used || 0;
+        const quotaLimit = fam.whatsapp_quota_limit || 150;
+        if (quotaUsed >= quotaLimit) {
+          return {
+            success: false,
+            simulated: false,
+            error: `Monthly WhatsApp reminder quota of ${quotaLimit} reached. Upgrade or add top-up pack to continue.`,
+            code: 'QUOTA_EXCEEDED',
+          };
+        }
+      }
+    }
+
+    const body = `💊 Softly Reminder: Time for *${medicationName}* (${dosage}) at ${time}.\n\nReply *DONE* once taken so your family knows you are safe.`;
+
+    // 1. Prioritize Meta WhatsApp Cloud API (Zero cost tier / official)
+    if (this.isMetaConfigured()) {
       try {
-        // Dynamic import to avoid crash if twilio credentials are empty
-        const twilio = (await import('twilio')).default;
-        const client = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!);
-        const message = await client.messages.create({
-          from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
-          to: `whatsapp:${to}`,
-          body,
+        const metaRecipient = this.formatPhoneForMeta(to);
+        const endpoint = `https://graph.facebook.com/v20.0/${process.env.META_PHONE_NUMBER_ID}/messages`;
+
+        // Send text message payload
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.META_ACCESS_TOKEN}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            messaging_product: 'whatsapp',
+            recipient_type: 'individual',
+            to: metaRecipient,
+            type: 'text',
+            text: {
+              preview_url: false,
+              body,
+            },
+          }),
         });
+
+        const data = await response.json();
+
+        if (!response.ok || data.error) {
+          const errCode = data.error?.code;
+          const errMsg = data.error?.message || 'Meta WhatsApp dispatch failed';
+          console.error('[Meta Cloud API Error]', data.error);
+
+          // If message failed because outside 24h window (code 131047), attempt template fallback
+          if (errCode === 131047) {
+            const templateRes = await fetch(endpoint, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${process.env.META_ACCESS_TOKEN}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                messaging_product: 'whatsapp',
+                to: metaRecipient,
+                type: 'template',
+                template: {
+                  name: 'hello_world',
+                  language: { code: 'en_US' },
+                },
+              }),
+            });
+            const templateData = await templateRes.json();
+            if (templateRes.ok && templateData.messages?.[0]?.id) {
+              return { success: true, messageId: templateData.messages[0].id, channel: 'meta_cloud_template' };
+            }
+          }
+
+          return { success: false, simulated: false, error: errMsg, code: errCode };
+        }
+
+        const messageId = data.messages?.[0]?.id;
+
+        if (familyId) {
+          await memoryDataRepository.incrementWhatsappQuota(familyId);
+        }
 
         await memoryDataRepository.addMessage({
           to,
@@ -41,9 +143,40 @@ export class WhatsAppService {
           status: 'sent',
         });
 
-        return { success: true, sid: message.sid, simulated: false };
+        return { success: true, messageId, simulated: false, channel: 'meta_cloud' };
       } catch (err: any) {
-        console.warn('Twilio delivery failed, falling back to local simulation:', err.message);
+        console.error('[Meta WhatsApp] Delivery failed:', err.message);
+        return { success: false, simulated: false, error: err.message };
+      }
+    }
+
+    // 2. Fallback to Twilio if Meta is not configured
+    if (this.isTwilioConfigured()) {
+      try {
+        const twilio = (await import('twilio')).default;
+        const client = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!);
+        const message = await client.messages.create({
+          from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+          to: `whatsapp:${to}`,
+          body,
+        });
+
+        if (familyId) {
+          await memoryDataRepository.incrementWhatsappQuota(familyId);
+        }
+
+        await memoryDataRepository.addMessage({
+          to,
+          direction: 'outbound',
+          body,
+          medication_id: medicationId,
+          status: 'sent',
+        });
+
+        return { success: true, sid: message.sid, simulated: false, channel: 'twilio' };
+      } catch (err: any) {
+        console.error('[Twilio] Delivery failed:', err.message, err.code);
+        return { success: false, simulated: false, error: err.message, twilioCode: err.code };
       }
     }
 

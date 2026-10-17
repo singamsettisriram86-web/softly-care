@@ -6,11 +6,14 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const {
       medication_id,
-      family_id = 'fam-sharma',
+      family_id,
       status = 'taken',
-      taken_by_name = 'Aditya (Caregiver)',
+      taken_by_name = 'Caregiver',
       channel = 'app',
     } = body;
+    if (!family_id) {
+      return NextResponse.json({ success: false, error: 'family_id is required' }, { status: 400 });
+    }
 
     if (!medication_id) {
       return NextResponse.json(
