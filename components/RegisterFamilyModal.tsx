@@ -25,6 +25,7 @@ export default function RegisterFamilyModal({ isOpen, onClose, onSuccess }: Prop
   const [helperName, setHelperName] = useState('');
   const [helperPhone, setHelperPhone] = useState('');
   const [helperUpi, setHelperUpi] = useState('');
+  const [helperType, setHelperType] = useState<'live_in' | 'visiting'>('visiting');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -58,6 +59,7 @@ export default function RegisterFamilyModal({ isOpen, onClose, onSuccess }: Prop
           helperName: helperName.trim(),
           helperPhone: helperPhone.trim(),
           helperUpi: helperUpi.trim(),
+          helperType: helperType,
         }),
       });
 
@@ -266,6 +268,47 @@ export default function RegisterFamilyModal({ isOpen, onClose, onSuccess }: Prop
                 />
               </div>
             </div>
+            <div>
+              <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+                Helper Living Arrangement
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setHelperType('visiting')}
+                  className={`p-2.5 rounded-xl text-left border transition-all ${
+                    helperType === 'visiting'
+                      ? 'border-stone-800 bg-stone-900 text-white shadow-sm'
+                      : 'border-stone-200 bg-white text-stone-700 hover:border-stone-300'
+                  }`}
+                >
+                  <span className="text-sm block mb-0.5">🚗</span>
+                  <span className="text-xs font-bold block">Visiting Helper</span>
+                  <span className={`text-[10px] block mt-0.5 leading-tight ${
+                    helperType === 'visiting' ? 'text-stone-300' : 'text-stone-400'
+                  }`}>
+                    Comes for tasks & errands
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setHelperType('live_in')}
+                  className={`p-2.5 rounded-xl text-left border transition-all ${
+                    helperType === 'live_in'
+                      ? 'border-emerald-600 bg-emerald-50 text-emerald-950 shadow-sm'
+                      : 'border-stone-200 bg-white text-stone-700 hover:border-stone-300'
+                  }`}
+                >
+                  <span className="text-sm block mb-0.5">🏠</span>
+                  <span className="text-xs font-bold block">Live-in Caregiver</span>
+                  <span className="text-[10px] block mt-0.5 leading-tight text-emerald-700">
+                    Lives with parents; receives meds WhatsApp alerts & can reply DONE
+                  </span>
+                </button>
+              </div>
+            </div>
+
             <div>
               <label className="block text-xs font-semibold text-stone-700 mb-1">
                 Helper UPI ID (for instant direct payments)

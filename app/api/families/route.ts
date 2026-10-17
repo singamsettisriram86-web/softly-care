@@ -56,6 +56,7 @@ export async function POST(req: NextRequest) {
       helperName,
       helperPhone,
       helperUpi,
+      helperType,        // 'live_in' | 'visiting'
     } = body;
 
     if (!familyName || !caregiverName) {
@@ -85,6 +86,7 @@ export async function POST(req: NextRequest) {
       helperName,
       helperPhone,
       helperUpi,
+      helperType: helperType || 'visiting',
     });
 
     return NextResponse.json(
@@ -100,7 +102,7 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
-    const { action = 'add', familyId, memberId, relation, name, city, phone, upi_id } = body;
+    const { action = 'add', familyId, memberId, relation, name, city, phone, upi_id, role, helper_type } = body;
 
     if (action === 'update') {
       // Update an existing member
@@ -113,23 +115,26 @@ export async function PATCH(req: NextRequest) {
         city: city !== undefined ? city.trim() : undefined,
         phone: phone !== undefined ? phone.trim() : undefined,
         upi_id: upi_id !== undefined ? upi_id.trim() : undefined,
+        helper_type: helper_type !== undefined ? helper_type : undefined,
       });
       return NextResponse.json({ success: true, member: updated });
     }
 
-    // Default action: 'add' — add a new care member
-    if (!familyId || !name?.trim() || !relation?.trim()) {
+    // Default action: 'add' — add a new care member or helper
+    if (!familyId || !name?.trim()) {
       return NextResponse.json(
-        { success: false, error: 'familyId, relation, and name are required' },
+        { success: false, error: 'familyId and name are required' },
         { status: 400 }
       );
     }
     const member = await memoryDataRepository.addCareMember({
       familyId,
-      relation: relation.trim(),
+      relation: (relation || 'Elder').trim(),
       name: name.trim(),
       city: (city || '').trim(),
       phone: (phone || '').trim(),
+      role: role || (relation === 'Helper' ? 'helper' : 'elder'),
+      helper_type: helper_type || 'visiting',
     });
     return NextResponse.json({ success: true, member }, { status: 201 });
   } catch (error: any) {

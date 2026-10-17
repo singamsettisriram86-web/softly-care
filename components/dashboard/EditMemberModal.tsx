@@ -23,6 +23,7 @@ export default function EditMemberModal({ isOpen, member, onClose, onSaved, onDe
   const [city, setCity] = useState('');
   const [phone, setPhone] = useState('');
   const [upiId, setUpiId] = useState('');
+  const [helperType, setHelperType] = useState<'live_in' | 'visiting'>('visiting');
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -37,6 +38,7 @@ export default function EditMemberModal({ isOpen, member, onClose, onSaved, onDe
       setCity(member.city || '');
       setPhone(member.phone ? member.phone.split('#upi:')[0] : '');
       setUpiId(member.upi_id || '');
+      setHelperType(member.helper_type || 'visiting');
       setError('');
       setConfirmDelete(false);
     }
@@ -65,6 +67,7 @@ export default function EditMemberModal({ isOpen, member, onClose, onSaved, onDe
       }
       if (isHelper) {
         payload.upi_id = upiId.trim();
+        payload.helper_type = helperType;
       }
 
       const res = await fetch('/api/families', {
@@ -211,18 +214,61 @@ export default function EditMemberModal({ isOpen, member, onClose, onSaved, onDe
             />
           </div>
 
-          {/* Helper-specific: UPI */}
+          {/* Helper-specific: Living Arrangement & UPI */}
           {isHelper && (
-            <div>
-              <label className="block text-xs font-semibold text-stone-600 mb-1.5">UPI ID (for payments)</label>
-              <input
-                type="text"
-                placeholder="e.g. suresh@upi"
-                value={upiId}
-                onChange={(e) => setUpiId(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-2xl bg-stone-50 border border-stone-200 text-sm text-stone-800 placeholder-stone-400 outline-none focus:ring-2 focus:ring-[#FFB7B2]/60 focus:border-transparent"
-              />
-            </div>
+            <>
+              <div>
+                <label className="block text-xs font-semibold text-stone-600 mb-1.5">
+                  Helper Living Arrangement
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setHelperType('visiting')}
+                    className={`p-2.5 rounded-2xl text-left border transition-all ${
+                      helperType === 'visiting'
+                        ? 'border-stone-800 bg-stone-900 text-white shadow-sm'
+                        : 'border-stone-200 bg-white text-stone-700 hover:border-stone-300'
+                    }`}
+                  >
+                    <span className="text-base block mb-0.5">🚗</span>
+                    <span className="text-xs font-bold block">Visiting Helper</span>
+                    <span className={`text-[10px] block mt-0.5 leading-tight ${
+                      helperType === 'visiting' ? 'text-stone-300' : 'text-stone-400'
+                    }`}>
+                      Tasks & chores only
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setHelperType('live_in')}
+                    className={`p-2.5 rounded-2xl text-left border transition-all ${
+                      helperType === 'live_in'
+                        ? 'border-emerald-600 bg-emerald-50 text-emerald-950 shadow-sm'
+                        : 'border-stone-200 bg-white text-stone-700 hover:border-stone-300'
+                    }`}
+                  >
+                    <span className="text-base block mb-0.5">🏠</span>
+                    <span className="text-xs font-bold block">Live-in Caregiver</span>
+                    <span className="text-[10px] block mt-0.5 leading-tight text-emerald-700">
+                      Receives WhatsApp meds alerts & can reply DONE
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-stone-600 mb-1.5">UPI ID (for payments)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. suresh@upi"
+                  value={upiId}
+                  onChange={(e) => setUpiId(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-2xl bg-stone-50 border border-stone-200 text-sm text-stone-800 placeholder-stone-400 outline-none focus:ring-2 focus:ring-[#FFB7B2]/60 focus:border-transparent"
+                />
+              </div>
+            </>
           )}
 
           {/* Action Buttons */}

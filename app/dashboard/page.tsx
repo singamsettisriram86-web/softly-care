@@ -589,12 +589,25 @@ function CaregiverDashboardContent() {
             {/* Helper Info */}
             <div className="bg-stone-50/70 rounded-2xl p-3 border border-stone-100 flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
-                <span className="text-xl shrink-0">🤝</span>
+                <span className="text-xl shrink-0">
+                  {activeHelper?.helper_type === 'live_in' ? '🏠' : '🤝'}
+                </span>
                 <div className="text-xs min-w-0">
-                  <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">
-                    Local Helper / Support
-                  </span>
-                  <p className="font-bold text-stone-800 truncate">{helperDisplayName}</p>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">
+                      {activeHelper?.helper_type === 'live_in' ? 'Live-in Caregiver' : 'Visiting Helper'}
+                    </span>
+                    {activeHelper?.helper_type === 'live_in' ? (
+                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">
+                        Receives Meds Alerts
+                      </span>
+                    ) : (
+                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-stone-200/70 text-stone-600 font-semibold">
+                        Tasks & Chores
+                      </span>
+                    )}
+                  </div>
+                  <p className="font-bold text-stone-800 truncate mt-0.5">{helperDisplayName}</p>
                   <p className="text-[11px] text-stone-500 truncate">
                     {activeHelper?.phone?.split('#upi:')[0] || 'On call'}
                     {activeHelper?.upi_id ? ` • UPI: ${activeHelper.upi_id}` : ''}

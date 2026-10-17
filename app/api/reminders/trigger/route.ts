@@ -17,6 +17,7 @@ export async function POST(req: NextRequest) {
     let medName = 'Prescribed Medication';
     let dosage = 'As advised';
     let time = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+    let forMemberName: string | undefined;
 
     if (medicationId) {
       const meds = await memoryDataRepository.getMedications(familyId);
@@ -25,6 +26,7 @@ export async function POST(req: NextRequest) {
         medName = found.name;
         dosage = found.dosage;
         time = found.schedule[0] || time;
+        forMemberName = found.for_member_name;
       }
     }
 
@@ -35,6 +37,7 @@ export async function POST(req: NextRequest) {
       time,
       medicationId,
       familyId,
+      forMemberName,
     });
 
     return NextResponse.json({ success: true, result });

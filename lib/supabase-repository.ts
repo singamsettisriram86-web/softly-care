@@ -2,6 +2,7 @@ import { supabase } from './supabase';
 import {
   Family,
   FamilyMember,
+  UserRole,
   Medication,
   MedicationLog,
   Appointment,
@@ -91,7 +92,28 @@ export class SupabaseDataRepository {
     return data.map((m: any) => ({
       ...m,
       relation_type: m.relation_type || (m.role === 'elder' ? 'Elder' : undefined),
+      helper_type: m.helper_type || (m.role === 'helper' ? 'visiting' : undefined),
     }));
+  }
+
+  async findMemberByPhone(phone: string): Promise<FamilyMember | undefined> {
+    const cleanDigits = phone.replace(/[^\d]/g, '');
+    const last10 = cleanDigits.slice(-10);
+    if (!last10) return undefined;
+
+    const { data, error } = await supabase
+      .from('family_members')
+      .select('*')
+      .ilike('phone', `%${last10}%`)
+      .limit(1)
+      .maybeSingle();
+
+    if (error || !data) return undefined;
+    return {
+      ...data,
+      relation_type: data.relation_type || (data.role === 'elder' ? 'Elder' : undefined),
+      helper_type: data.helper_type || (data.role === 'helper' ? 'visiting' : undefined),
+    };
   }
 
   async getUserFamily(user: { id?: string; name?: string; email?: string }): Promise<Family | undefined> {
@@ -140,6 +162,7 @@ export class SupabaseDataRepository {
     helperName?: string;
     helperPhone?: string;
     helperUpi?: string;
+    helperType?: 'live_in' | 'visiting';
   }): Promise<{ family: Family; members: FamilyMember[] }> {
     const familyId = `fam-${Date.now()}`;
     const codeNum = Math.floor(1000 + Math.random() * 9000);
@@ -199,6 +222,7 @@ export class SupabaseDataRepository {
         phone: params.helperPhone || '+919888877777',
         city: params.caregiverCity || 'Hometown',
         upi_id: params.helperUpi?.trim() || undefined,
+        helper_type: params.helperType || 'visiting',
       });
     }
 
@@ -212,15 +236,19 @@ export class SupabaseDataRepository {
     name: string;
     city: string;
     phone?: string;
+    role?: UserRole;
+    helper_type?: 'live_in' | 'visiting';
   }): Promise<FamilyMember> {
+    const role = params.role || 'elder';
     const member: FamilyMember = {
       id: `mem-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
       family_id: params.familyId,
-      role: 'elder',
+      role,
       name: params.name.trim(),
       phone: params.phone?.trim() || '',
       city: params.city || 'Hometown',
-      relation_type: params.relation,
+      relation_type: role === 'elder' ? params.relation : undefined,
+      helper_type: role === 'helper' ? (params.helper_type || 'visiting') : undefined,
     };
     await supabase.from('family_members').insert([{
       id: member.id,
@@ -230,6 +258,7 @@ export class SupabaseDataRepository {
       phone: member.phone,
       city: member.city,
       relation_type: member.relation_type,
+      helper_type: member.helper_type,
     }]);
     return member;
   }
@@ -242,6 +271,7 @@ export class SupabaseDataRepository {
       city?: string;
       phone?: string;
       upi_id?: string;
+      helper_type?: 'live_in' | 'visiting';
     }
   ): Promise<FamilyMember | undefined> {
     const payload: any = {};
@@ -250,6 +280,7 @@ export class SupabaseDataRepository {
     if (updates.city !== undefined) payload.city = updates.city.trim();
     if (updates.phone !== undefined) payload.phone = updates.phone.trim();
     if (updates.upi_id !== undefined) payload.upi_id = updates.upi_id.trim() || null;
+    if (updates.helper_type !== undefined) payload.helper_type = updates.helper_type;
 
     const { data, error } = await supabase
       .from('family_members')

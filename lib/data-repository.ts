@@ -1,6 +1,7 @@
 import {
   Family,
   FamilyMember,
+  UserRole,
   Medication,
   MedicationLog,
   Appointment,
@@ -351,6 +352,7 @@ export class MemoryDataRepository {
     helperName?: string;
     helperPhone?: string;
     helperUpi?: string;
+    helperType?: 'live_in' | 'visiting';
   }): Promise<{ family: Family; members: FamilyMember[] }> {
     const familyId = `fam-${Date.now()}`;
     const codeNum = Math.floor(1000 + Math.random() * 9000);
@@ -405,6 +407,7 @@ export class MemoryDataRepository {
         phone: encodedPhone,
         city: params.caregiverCity || 'Hometown',
         upi_id: params.helperUpi?.trim(),
+        helper_type: params.helperType || 'visiting',
       });
     }
 
@@ -427,15 +430,19 @@ export class MemoryDataRepository {
     name: string;
     city: string;
     phone?: string;
+    role?: UserRole;
+    helper_type?: 'live_in' | 'visiting';
   }): Promise<FamilyMember> {
+    const role = params.role || 'elder';
     const member: FamilyMember = {
       id: `mem-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
       family_id: params.familyId,
-      role: 'elder',
+      role,
       name: params.name,
       phone: params.phone?.trim() || '',
       city: params.city || 'Hometown',
-      relation_type: params.relation,
+      relation_type: role === 'elder' ? params.relation : undefined,
+      helper_type: role === 'helper' ? (params.helper_type || 'visiting') : undefined,
     };
     this.members.push(member);
 
@@ -449,6 +456,23 @@ export class MemoryDataRepository {
     return member;
   }
 
+  async findMemberByPhone(phone: string): Promise<FamilyMember | undefined> {
+    if (this.isSupabaseEnabled()) {
+      try {
+        const sbMem = await supabaseDataRepository.findMemberByPhone(phone);
+        if (sbMem) return sbMem;
+      } catch (e) {
+        console.warn('[DataRepository] Supabase findMemberByPhone error:', e);
+      }
+    }
+    const cleanDigits = phone.replace(/[^\d]/g, '');
+    const last10 = cleanDigits.slice(-10);
+    return this.members.find((m) => {
+      const mClean = (m.phone || '').replace(/[^\d]/g, '');
+      return mClean.includes(last10);
+    });
+  }
+
   async updateMember(
     memberId: string,
     updates: {
@@ -457,6 +481,7 @@ export class MemoryDataRepository {
       city?: string;
       phone?: string;
       upi_id?: string;
+      helper_type?: 'live_in' | 'visiting';
     }
   ): Promise<FamilyMember | undefined> {
     const idx = this.members.findIndex((m) => m.id === memberId);
@@ -473,6 +498,7 @@ export class MemoryDataRepository {
         phone: updates.phone !== undefined ? updates.phone.trim() : existing.phone,
         upi_id: updates.upi_id !== undefined ? updates.upi_id.trim() : existing.upi_id,
         relation_type: updates.relation !== undefined ? updates.relation : existing.relation_type,
+        helper_type: updates.helper_type !== undefined ? updates.helper_type : existing.helper_type,
       };
     }
 

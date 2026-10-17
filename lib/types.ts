@@ -25,6 +25,7 @@ export interface FamilyMember {
   city: string;
   upi_id?: string;
   relation_type?: string; // e.g. 'Father', 'Mother', 'Brother', 'Sister', 'Others'
+  helper_type?: 'live_in' | 'visiting'; // Live-in Caregiver or Visiting Task Helper
 }
 
 export interface Medication {

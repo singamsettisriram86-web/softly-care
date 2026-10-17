@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { X, Plus } from 'lucide-react';
 
-const RELATION_OPTIONS = ['Father', 'Mother', 'Brother', 'Sister', 'Grandfather', 'Grandmother', 'Others'];
+const RELATION_OPTIONS = ['Father', 'Mother', 'Brother', 'Sister', 'Grandfather', 'Grandmother', 'Helper', 'Others'];
 
 interface Props {
   isOpen: boolean;
@@ -17,6 +17,7 @@ export default function AddMemberModal({ isOpen, familyId, onClose, onAdded }: P
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [city, setCity] = useState('');
+  const [helperType, setHelperType] = useState<'live_in' | 'visiting'>('visiting');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -27,6 +28,7 @@ export default function AddMemberModal({ isOpen, familyId, onClose, onAdded }: P
     setName('');
     setPhone('');
     setCity('');
+    setHelperType('visiting');
     setError('');
   };
 
@@ -44,6 +46,7 @@ export default function AddMemberModal({ isOpen, familyId, onClose, onAdded }: P
     setLoading(true);
     setError('');
     try {
+      const isHelper = relation === 'Helper';
       const res = await fetch('/api/families', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -53,6 +56,8 @@ export default function AddMemberModal({ isOpen, familyId, onClose, onAdded }: P
           name: name.trim(),
           phone: phone.trim(),
           city: city.trim(),
+          role: isHelper ? 'helper' : 'elder',
+          helper_type: isHelper ? helperType : undefined,
         }),
       });
       const data = await res.json();
@@ -144,6 +149,49 @@ export default function AddMemberModal({ isOpen, familyId, onClose, onAdded }: P
               className="w-full px-4 py-2.5 rounded-2xl bg-stone-50 border border-stone-200 text-sm text-stone-800 placeholder-stone-400 outline-none focus:ring-2 focus:ring-[#FFB7B2]/60 focus:border-transparent"
             />
           </div>
+
+          {relation === 'Helper' && (
+            <div>
+              <label className="block text-xs font-semibold text-stone-600 mb-1.5">
+                Helper Living Arrangement
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setHelperType('visiting')}
+                  className={`p-2.5 rounded-2xl text-left border transition-all ${
+                    helperType === 'visiting'
+                      ? 'border-stone-800 bg-stone-900 text-white shadow-sm'
+                      : 'border-stone-200 bg-white text-stone-700 hover:border-stone-300'
+                  }`}
+                >
+                  <span className="text-base block mb-0.5">🚗</span>
+                  <span className="text-xs font-bold block">Visiting Helper</span>
+                  <span className={`text-[10px] block mt-0.5 leading-tight ${
+                    helperType === 'visiting' ? 'text-stone-300' : 'text-stone-400'
+                  }`}>
+                    Tasks & chores only
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setHelperType('live_in')}
+                  className={`p-2.5 rounded-2xl text-left border transition-all ${
+                    helperType === 'live_in'
+                      ? 'border-emerald-600 bg-emerald-50 text-emerald-950 shadow-sm'
+                      : 'border-stone-200 bg-white text-stone-700 hover:border-stone-300'
+                  }`}
+                >
+                  <span className="text-base block mb-0.5">🏠</span>
+                  <span className="text-xs font-bold block">Live-in Caregiver</span>
+                  <span className="text-[10px] block mt-0.5 leading-tight text-emerald-700">
+                    Receives WhatsApp meds alerts & can reply DONE
+                  </span>
+                </button>
+              </div>
+            </div>
+          )}
 
           <div>
             <label className="block text-xs font-semibold text-stone-600 mb-1.5">
