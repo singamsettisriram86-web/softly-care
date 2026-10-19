@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
-import { Search, MapPin, Filter, Sparkles, UserPlus, ArrowLeft, RefreshCw } from 'lucide-react';
+import { Search, MapPin, Filter, Sparkles, UserPlus, ArrowLeft, RefreshCw, X, Check, ChevronDown } from 'lucide-react';
 import { HelperMarketplaceProfile } from '@/lib/types';
 import HelperCard from '@/components/marketplace/HelperCard';
 import HelperDetailModal from '@/components/marketplace/HelperDetailModal';
@@ -19,6 +19,91 @@ const SKILL_FILTERS = [
   'Post-Surgery Bedside Care',
 ];
 
+interface IndianCity {
+  name: string;
+  state: string;
+  popular?: boolean;
+}
+
+const INDIAN_CITIES: IndianCity[] = [
+  // Andhra Pradesh & Telangana
+  { name: 'Amalapuram', state: 'Andhra Pradesh', popular: true },
+  { name: 'Hyderabad', state: 'Telangana', popular: true },
+  { name: 'Kakinada', state: 'Andhra Pradesh', popular: true },
+  { name: 'Rajahmundry', state: 'Andhra Pradesh', popular: true },
+  { name: 'Visakhapatnam', state: 'Andhra Pradesh', popular: true },
+  { name: 'Vijayawada', state: 'Andhra Pradesh', popular: true },
+  { name: 'Guntur', state: 'Andhra Pradesh' },
+  { name: 'Tirupati', state: 'Andhra Pradesh' },
+  { name: 'Nellore', state: 'Andhra Pradesh' },
+  { name: 'Kurnool', state: 'Andhra Pradesh' },
+  { name: 'Eluru', state: 'Andhra Pradesh' },
+  { name: 'Anantapur', state: 'Andhra Pradesh' },
+  { name: 'Secunderabad', state: 'Telangana' },
+  { name: 'Warangal', state: 'Telangana' },
+  { name: 'Nizamabad', state: 'Telangana' },
+  { name: 'Karimnagar', state: 'Telangana' },
+  { name: 'Khammam', state: 'Telangana' },
+
+  // Karnataka
+  { name: 'Bangalore', state: 'Karnataka', popular: true },
+  { name: 'Mysore', state: 'Karnataka' },
+  { name: 'Mangalore', state: 'Karnataka' },
+  { name: 'Hubli-Dharwad', state: 'Karnataka' },
+  { name: 'Belgaum', state: 'Karnataka' },
+  { name: 'Hosur', state: 'Tamil Nadu / KA border' },
+
+  // Tamil Nadu & Kerala
+  { name: 'Chennai', state: 'Tamil Nadu', popular: true },
+  { name: 'Coimbatore', state: 'Tamil Nadu' },
+  { name: 'Madurai', state: 'Tamil Nadu' },
+  { name: 'Trichy', state: 'Tamil Nadu' },
+  { name: 'Salem', state: 'Tamil Nadu' },
+  { name: 'Kochi', state: 'Kerala', popular: true },
+  { name: 'Thiruvananthapuram', state: 'Kerala' },
+  { name: 'Kozhikode', state: 'Kerala' },
+  { name: 'Thrissur', state: 'Kerala' },
+
+  // Maharashtra & Gujarat
+  { name: 'Mumbai', state: 'Maharashtra', popular: true },
+  { name: 'Pune', state: 'Maharashtra', popular: true },
+  { name: 'Nagpur', state: 'Maharashtra' },
+  { name: 'Nashik', state: 'Maharashtra' },
+  { name: 'Thane', state: 'Maharashtra' },
+  { name: 'Navi Mumbai', state: 'Maharashtra' },
+  { name: 'Ahmedabad', state: 'Gujarat', popular: true },
+  { name: 'Surat', state: 'Gujarat' },
+  { name: 'Vadodara', state: 'Gujarat' },
+  { name: 'Rajkot', state: 'Gujarat' },
+
+  // North & Central India
+  { name: 'Delhi NCR', state: 'Delhi & NCR', popular: true },
+  { name: 'Noida', state: 'Uttar Pradesh' },
+  { name: 'Gurgaon', state: 'Haryana' },
+  { name: 'Faridabad', state: 'Haryana' },
+  { name: 'Ghaziabad', state: 'Uttar Pradesh' },
+  { name: 'Jaipur', state: 'Rajasthan', popular: true },
+  { name: 'Chandigarh', state: 'Punjab / Haryana', popular: true },
+  { name: 'Lucknow', state: 'Uttar Pradesh' },
+  { name: 'Kanpur', state: 'Uttar Pradesh' },
+  { name: 'Varanasi', state: 'Uttar Pradesh' },
+  { name: 'Agra', state: 'Uttar Pradesh' },
+  { name: 'Dehradun', state: 'Uttarakhand' },
+  { name: 'Indore', state: 'Madhya Pradesh' },
+  { name: 'Bhopal', state: 'Madhya Pradesh' },
+  { name: 'Jabalpur', state: 'Madhya Pradesh' },
+
+  // East & North East
+  { name: 'Kolkata', state: 'West Bengal', popular: true },
+  { name: 'Howrah', state: 'West Bengal' },
+  { name: 'Bhubaneswar', state: 'Odisha' },
+  { name: 'Cuttack', state: 'Odisha' },
+  { name: 'Patna', state: 'Bihar' },
+  { name: 'Ranchi', state: 'Jharkhand' },
+  { name: 'Jamshedpur', state: 'Jharkhand' },
+  { name: 'Guwahati', state: 'Assam' },
+];
+
 export default function BrowseHelpersPage() {
   const [helpers, setHelpers] = useState<HelperMarketplaceProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,9 +115,24 @@ export default function BrowseHelpersPage() {
   const [availableOnly, setAvailableOnly] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
+  // Dropdown & Search state
+  const [isCityDropdownOpen, setIsCityDropdownOpen] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+
   // Modals
   const [detailHelper, setDetailHelper] = useState<HelperMarketplaceProfile | null>(null);
   const [connectHelper, setConnectHelper] = useState<HelperMarketplaceProfile | null>(null);
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setIsCityDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const fetchHelpers = async () => {
     setLoading(true);
@@ -60,22 +160,39 @@ export default function BrowseHelpersPage() {
     fetchHelpers();
   }, [selectedCity, selectedType, selectedSkill, availableOnly]);
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSearchSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setIsCityDropdownOpen(false);
     fetchHelpers();
   };
 
-  // Extract all distinct cities from loaded helpers or defaults
-  const availableCities = useMemo(() => {
-    const citySet = new Set<string>();
+  const handleSelectCity = (city: string) => {
+    setSelectedCity(city);
+    setIsCityDropdownOpen(false);
+  };
+
+  // Find which cities have registered helpers
+  const activeHelperCities = useMemo(() => {
+    const s = new Set<string>();
     helpers.forEach((h) => {
-      if (h.base_city) citySet.add(h.base_city);
-      (h.service_cities || []).forEach((c) => citySet.add(c));
+      if (h.base_city) s.add(h.base_city.toLowerCase());
+      (h.service_cities || []).forEach((c) => s.add(c.toLowerCase()));
     });
-    // Add common fallback cities
-    ['Amalapuram', 'Hyderabad', 'Bangalore', 'Jaipur', 'Visakhapatnam', 'Kakinada'].forEach((c) => citySet.add(c));
-    return Array.from(citySet).sort();
+    return s;
   }, [helpers]);
+
+  // Filtered Indian cities based on search bar text
+  const filteredCities = useMemo(() => {
+    if (!searchQuery.trim()) return INDIAN_CITIES;
+    const q = searchQuery.toLowerCase().trim();
+    return INDIAN_CITIES.filter(
+      (c) => c.name.toLowerCase().includes(q) || c.state.toLowerCase().includes(q)
+    );
+  }, [searchQuery]);
+
+  const popularCities = useMemo(() => {
+    return INDIAN_CITIES.filter((c) => c.popular);
+  }, []);
 
   const clearFilters = () => {
     setSelectedCity('all');
@@ -83,6 +200,7 @@ export default function BrowseHelpersPage() {
     setSelectedSkill('All');
     setAvailableOnly(false);
     setSearchQuery('');
+    setIsCityDropdownOpen(false);
   };
 
   return (
@@ -127,43 +245,256 @@ export default function BrowseHelpersPage() {
         <div className="bg-white rounded-3xl p-5 sm:p-6 border border-stone-200/80 shadow-xs mb-8 space-y-4">
           {/* Search + City Row */}
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-            {/* Search Input */}
-            <form onSubmit={handleSearchSubmit} className="sm:col-span-7 flex gap-2">
-              <div className="relative flex-1">
-                <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  placeholder="Search by name, skills (e.g. Bedridden), or language..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3.5 py-2.5 rounded-2xl bg-stone-50 border border-stone-200 text-xs text-stone-800 placeholder-stone-400 outline-none focus:ring-2 focus:ring-[#FFB7B2]/70 focus:border-transparent"
-                />
-              </div>
-              <button
-                type="submit"
-                className="px-4 py-2.5 rounded-2xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold transition-colors"
-              >
-                Search
-              </button>
-            </form>
+            {/* Interactive Search Bar with Indian Cities Dropdown */}
+            <div ref={searchRef} className="sm:col-span-7 relative">
+              <form onSubmit={handleSearchSubmit} className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder={
+                      selectedCity !== 'all'
+                        ? `City: ${selectedCity} (Click to change city or search...)`
+                        : "Click to select city in India, or type skills..."
+                    }
+                    value={searchQuery}
+                    onFocus={() => setIsCityDropdownOpen(true)}
+                    onClick={() => setIsCityDropdownOpen(true)}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setIsCityDropdownOpen(true);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') setIsCityDropdownOpen(false);
+                    }}
+                    className="w-full pl-9 pr-16 py-2.5 rounded-2xl bg-stone-50 border border-stone-200 text-xs text-stone-800 placeholder-stone-400 outline-none focus:ring-2 focus:ring-[#FFB7B2]/70 focus:border-transparent transition-all"
+                  />
 
-            {/* City Dropdown */}
+                  {/* Inside Input Action Indicators */}
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSearchQuery('');
+                          fetchHelpers();
+                        }}
+                        className="p-1 text-stone-400 hover:text-stone-700 rounded"
+                        title="Clear search text"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setIsCityDropdownOpen(!isCityDropdownOpen)}
+                      className="p-1 text-stone-400 hover:text-stone-700 rounded"
+                      title="Open cities list"
+                    >
+                      <ChevronDown
+                        className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                          isCityDropdownOpen ? 'rotate-180 text-stone-800' : ''
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  className="px-4 py-2.5 rounded-2xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold transition-colors shadow-2xs"
+                >
+                  Search
+                </button>
+              </form>
+
+              {/* DROPDOWN OF CITIES IN INDIA */}
+              {isCityDropdownOpen && (
+                <div className="absolute left-0 right-0 top-full mt-2 z-40 bg-white/98 backdrop-blur-md rounded-2xl border border-stone-200 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                  {/* Dropdown Header */}
+                  <div className="px-3.5 py-2.5 bg-stone-50/90 border-b border-stone-100 flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-stone-500 flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-stone-500" />
+                      Select City / Hometown in India
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsCityDropdownOpen(false)}
+                      className="text-stone-400 hover:text-stone-700 p-0.5 rounded"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  {/* All Cities Option */}
+                  <button
+                    type="button"
+                    onClick={() => handleSelectCity('all')}
+                    className={`w-full px-3.5 py-2 text-left text-xs font-semibold flex items-center justify-between hover:bg-stone-100 transition-colors border-b border-stone-100 ${
+                      selectedCity === 'all' ? 'bg-[#FFB7B2]/20 text-stone-900 font-bold' : 'text-stone-700'
+                    }`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <span className="text-base">🌏</span>
+                      <span>All Cities Across India (Show All Helpers)</span>
+                    </span>
+                    {selectedCity === 'all' && <Check className="w-3.5 h-3.5 text-emerald-600" />}
+                  </button>
+
+                  {/* Quick Popular Cities Pills */}
+                  <div className="px-3.5 py-2.5 bg-amber-50/40 border-b border-stone-100">
+                    <span className="text-[10px] font-bold text-amber-900/80 uppercase tracking-wider block mb-1.5">
+                      Popular Caregiver Hubs:
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {popularCities.slice(0, 10).map((c) => (
+                        <button
+                          key={`pop-${c.name}`}
+                          type="button"
+                          onClick={() => handleSelectCity(c.name)}
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                            selectedCity.toLowerCase() === c.name.toLowerCase()
+                              ? 'bg-stone-900 text-white shadow-2xs'
+                              : 'bg-white border border-stone-200 text-stone-700 hover:border-stone-400 hover:bg-stone-50'
+                          }`}
+                        >
+                          {c.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* If user typed a search term, allow searching keyword as skill/name */}
+                  {searchQuery.trim() && (
+                    <button
+                      type="button"
+                      onClick={() => handleSearchSubmit()}
+                      className="w-full px-3.5 py-2.5 text-left text-xs font-semibold bg-blue-50/60 hover:bg-blue-100/70 border-b border-blue-100 flex items-center justify-between text-blue-900 transition-colors"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Search className="w-3.5 h-3.5 text-blue-600" />
+                        <span>
+                          Search caregivers for keyword: <strong>&quot;{searchQuery}&quot;</strong>
+                        </span>
+                      </span>
+                      <span className="text-[10px] text-blue-600/70">Press Search ↵</span>
+                    </button>
+                  )}
+
+                  {/* Scrollable Indian Cities List */}
+                  <div className="max-h-56 overflow-y-auto divide-y divide-stone-100">
+                    {filteredCities.length > 0 ? (
+                      filteredCities.map((city) => {
+                        const isSelected = selectedCity.toLowerCase() === city.name.toLowerCase();
+                        const hasHelpers = activeHelperCities.has(city.name.toLowerCase());
+
+                        return (
+                          <button
+                            key={city.name}
+                            type="button"
+                            onClick={() => handleSelectCity(city.name)}
+                            className={`w-full px-3.5 py-2 text-left text-xs flex items-center justify-between hover:bg-stone-100 transition-colors ${
+                              isSelected ? 'bg-[#FFB7B2]/20 font-bold text-stone-900' : 'text-stone-700'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <MapPin
+                                className={`w-3.5 h-3.5 ${
+                                  isSelected ? 'text-stone-900' : 'text-stone-400'
+                                }`}
+                              />
+                              <div>
+                                <span className="font-semibold text-stone-900">{city.name}</span>
+                                <span className="text-[10px] text-stone-400 ml-1.5">
+                                  {city.state}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-1.5">
+                              {hasHelpers && (
+                                <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded-full">
+                                  Active Helpers
+                                </span>
+                              )}
+                              {isSelected && <Check className="w-3.5 h-3.5 text-emerald-600" />}
+                            </div>
+                          </button>
+                        );
+                      })
+                    ) : (
+                      <div className="p-4 text-center text-xs text-stone-500">
+                        No Indian city found matching &quot;{searchQuery}&quot;.
+                        <br />
+                        <button
+                          type="button"
+                          onClick={() => handleSearchSubmit()}
+                          className="mt-2 text-softly-coral font-bold hover:underline"
+                        >
+                          Search as helper skill or name instead ➔
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* City Selector Dropdown (Desktop & Mobile complement) */}
             <div className="sm:col-span-5 relative">
               <MapPin className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <select
                 value={selectedCity}
                 onChange={(e) => setSelectedCity(e.target.value)}
-                className="w-full pl-9 pr-8 py-2.5 rounded-2xl bg-stone-50 border border-stone-200 text-xs text-stone-800 font-medium outline-none focus:ring-2 focus:ring-[#FFB7B2]/70 focus:border-transparent appearance-none"
+                className="w-full pl-9 pr-8 py-2.5 rounded-2xl bg-stone-50 border border-stone-200 text-xs text-stone-800 font-medium outline-none focus:ring-2 focus:ring-[#FFB7B2]/70 focus:border-transparent appearance-none cursor-pointer"
               >
-                <option value="all">📍 All Cities & Hometowns</option>
-                {availableCities.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
+                <option value="all">📍 All Cities &amp; Hometowns (India)</option>
+                <optgroup label="🌟 Popular Caregiver Locations">
+                  {popularCities.map((c) => (
+                    <option key={`opt-pop-${c.name}`} value={c.name}>
+                      {c.name} ({c.state})
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label="🏙️ All Cities in India">
+                  {INDIAN_CITIES.map((c) => (
+                    <option key={`opt-all-${c.name}`} value={c.name}>
+                      {c.name}, {c.state}
+                    </option>
+                  ))}
+                </optgroup>
               </select>
+              <ChevronDown className="w-3.5 h-3.5 text-stone-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
           </div>
+
+          {/* Active City Filter Chip (if city is selected) */}
+          {selectedCity !== 'all' && (
+            <div className="flex items-center gap-2 pt-1 flex-wrap">
+              <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">
+                Selected Location:
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-900 shadow-2xs">
+                <MapPin className="w-3.5 h-3.5 text-emerald-600" />
+                <span>{selectedCity}</span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedCity('all')}
+                  className="hover:bg-emerald-200/60 rounded-full p-0.5 ml-0.5 text-emerald-700"
+                  title="Clear city filter"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsCityDropdownOpen(true)}
+                className="text-stone-500 hover:text-stone-900 text-xs font-medium underline"
+              >
+                Change city
+              </button>
+            </div>
+          )}
 
           {/* Living Arrangement Type Pills */}
           <div className="flex items-center justify-between gap-3 flex-wrap pt-1">
