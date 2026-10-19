@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { UserPlus, ArrowRight, LayoutDashboard } from 'lucide-react';
+import { UserPlus, ArrowRight, LayoutDashboard, Search, Briefcase } from 'lucide-react';
 
 type HeroState = 'loading' | 'guest' | 'no-family' | 'has-family';
 
@@ -78,77 +78,133 @@ export default function HeroSection() {
         </p>
 
         {/* Action Buttons — smart based on auth + family state */}
-        <div className="flex flex-col sm:flex-row items-center gap-3.5 w-full sm:w-auto">
-
+        {/* Action Buttons — smart based on auth + family state */}
+        <div className="flex flex-col items-center gap-4 w-full">
           {heroState === 'loading' && (
             <div className="w-56 h-12 rounded-full bg-stone-100 animate-pulse" />
           )}
 
           {/* CASE 1: User already has a registered family */}
           {heroState === 'has-family' && (
-            <>
-              <Link
-                href={dashboardHref}
-                className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-softly-coral hover:bg-[#ffa8a2] active:scale-98 text-softly-text font-bold text-sm sm:text-base shadow-soft transition-all duration-200 flex items-center justify-center gap-2 group"
-              >
-                <LayoutDashboard className="w-4 h-4 text-stone-800" />
-                <span>Go to Your Family Dashboard</span>
-                <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-              </Link>
+            <div className="flex flex-col items-center gap-3.5 w-full">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full">
+                <Link
+                  href={dashboardHref}
+                  className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-softly-coral hover:bg-[#ffa8a2] active:scale-98 text-softly-text font-bold text-sm sm:text-base shadow-soft transition-all duration-200 flex items-center justify-center gap-2 group"
+                >
+                  <LayoutDashboard className="w-4 h-4 text-stone-800" />
+                  <span>Go to Your Family Dashboard</span>
+                  <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+                </Link>
+                <Link
+                  href="/helpers/browse"
+                  className="w-full sm:w-auto px-6 py-3.5 rounded-full bg-white hover:bg-stone-50 active:scale-98 text-stone-800 font-bold text-sm sm:text-base border border-stone-200 shadow-soft transition-all duration-200 flex items-center justify-center gap-2 group"
+                >
+                  <Search className="w-4 h-4 text-stone-700" />
+                  <span>Find a Helper</span>
+                  <span className="text-[10px] bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded-full font-bold">
+                    Marketplace
+                  </span>
+                </Link>
+                <Link
+                  href="/helpers/jobs"
+                  className="w-full sm:w-auto px-6 py-3.5 rounded-full bg-[#E8EFE8] hover:bg-[#d8e5d8] active:scale-98 text-stone-900 font-bold text-sm sm:text-base border border-[#C5D8C5] shadow-soft transition-all duration-200 flex items-center justify-center gap-2 group"
+                >
+                  <Briefcase className="w-4 h-4 text-emerald-800" />
+                  <span>Helper Jobs</span>
+                  <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+                </Link>
+              </div>
               <span className="text-xs text-stone-400 font-medium">
                 {familyName} is all set 🌿
               </span>
-            </>
+            </div>
           )}
 
           {/* CASE 2: Logged in but no family yet */}
           {heroState === 'no-family' && (
-            <>
-              <Link
-                href="/register"
-                className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-softly-coral hover:bg-[#ffa8a2] active:scale-98 text-softly-text font-bold text-sm sm:text-base shadow-soft transition-all duration-200 flex items-center justify-center gap-2 group"
-              >
-                <UserPlus className="w-4 h-4 text-stone-800" />
-                <span>Register Your Family Space</span>
-                <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-              </Link>
-              <Link
-                href="/dashboard"
-                className="w-full sm:w-auto px-6 py-3.5 rounded-full bg-white hover:bg-stone-50 active:scale-98 text-stone-800 font-semibold text-sm sm:text-base border border-stone-200 shadow-soft transition-all duration-200 flex items-center justify-center gap-1.5"
-              >
-                <span>Explore Demo Space</span>
-              </Link>
-            </>
+            <div className="flex flex-col items-center gap-3 w-full">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full">
+                <Link
+                  href="/register"
+                  className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-softly-coral hover:bg-[#ffa8a2] active:scale-98 text-softly-text font-bold text-sm sm:text-base shadow-soft transition-all duration-200 flex items-center justify-center gap-2 group"
+                >
+                  <UserPlus className="w-4 h-4 text-stone-800" />
+                  <span>Register Your Family Space</span>
+                  <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+                </Link>
+                <Link
+                  href="/helpers/browse"
+                  className="w-full sm:w-auto px-6 py-3.5 rounded-full bg-white hover:bg-stone-50 active:scale-98 text-stone-800 font-bold text-sm sm:text-base border border-stone-200 shadow-soft transition-all duration-200 flex items-center justify-center gap-2 group"
+                >
+                  <Search className="w-4 h-4 text-stone-700" />
+                  <span>Find a Helper</span>
+                  <span className="text-[10px] bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded-full font-bold">
+                    Marketplace
+                  </span>
+                </Link>
+                <Link
+                  href="/helpers/jobs"
+                  className="w-full sm:w-auto px-6 py-3.5 rounded-full bg-[#E8EFE8] hover:bg-[#d8e5d8] active:scale-98 text-stone-900 font-bold text-sm sm:text-base border border-[#C5D8C5] shadow-soft transition-all duration-200 flex items-center justify-center gap-2 group"
+                >
+                  <Briefcase className="w-4 h-4 text-emerald-800" />
+                  <span>Helper Jobs</span>
+                  <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+                </Link>
+              </div>
+              <div className="flex items-center gap-3 text-xs font-semibold text-stone-500 pt-1">
+                <Link href="/dashboard" className="hover:text-stone-900 underline transition-colors">
+                  Explore Demo Space
+                </Link>
+                <span>•</span>
+                <Link href="/helper" className="hover:text-stone-900 underline transition-colors">
+                  Helper PIN Access
+                </Link>
+              </div>
+            </div>
           )}
 
           {/* CASE 3: Not logged in (guest) */}
           {heroState === 'guest' && (
-            <>
-              <Link
-                href="/login?next=/register"
-                className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-softly-coral hover:bg-[#ffa8a2] active:scale-98 text-softly-text font-bold text-sm sm:text-base shadow-soft transition-all duration-200 flex items-center justify-center gap-2 group"
-              >
-                <UserPlus className="w-4 h-4 text-stone-800" />
-                <span>Register Your Family Space</span>
-                <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-              </Link>
-              <Link
-                href="/dashboard"
-                className="w-full sm:w-auto px-6 py-3.5 rounded-full bg-white hover:bg-stone-50 active:scale-98 text-stone-800 font-semibold text-sm sm:text-base border border-stone-200 shadow-soft transition-all duration-200 flex items-center justify-center gap-1.5"
-              >
-                <span>Explore Demo Space</span>
-              </Link>
-            </>
-          )}
-
-          {/* Helper PIN link — always visible */}
-          {heroState !== 'loading' && (
-            <Link
-              href="/helper"
-              className="text-xs font-semibold text-stone-500 hover:text-stone-900 underline px-3 py-2 transition-colors"
-            >
-              Helper PIN Access
-            </Link>
+            <div className="flex flex-col items-center gap-3 w-full">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full">
+                <Link
+                  href="/login?next=/register"
+                  className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-softly-coral hover:bg-[#ffa8a2] active:scale-98 text-softly-text font-bold text-sm sm:text-base shadow-soft transition-all duration-200 flex items-center justify-center gap-2 group"
+                >
+                  <UserPlus className="w-4 h-4 text-stone-800" />
+                  <span>Register Your Family Space</span>
+                  <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+                </Link>
+                <Link
+                  href="/helpers/browse"
+                  className="w-full sm:w-auto px-6 py-3.5 rounded-full bg-white hover:bg-stone-50 active:scale-98 text-stone-800 font-bold text-sm sm:text-base border border-stone-200 shadow-soft transition-all duration-200 flex items-center justify-center gap-2 group"
+                >
+                  <Search className="w-4 h-4 text-stone-700" />
+                  <span>Find a Helper</span>
+                  <span className="text-[10px] bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded-full font-bold">
+                    Marketplace
+                  </span>
+                </Link>
+                <Link
+                  href="/helpers/jobs"
+                  className="w-full sm:w-auto px-6 py-3.5 rounded-full bg-[#E8EFE8] hover:bg-[#d8e5d8] active:scale-98 text-stone-900 font-bold text-sm sm:text-base border border-[#C5D8C5] shadow-soft transition-all duration-200 flex items-center justify-center gap-2 group"
+                >
+                  <Briefcase className="w-4 h-4 text-emerald-800" />
+                  <span>Helper Jobs</span>
+                  <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+                </Link>
+              </div>
+              <div className="flex items-center gap-3 text-xs font-semibold text-stone-500 pt-1">
+                <Link href="/dashboard" className="hover:text-stone-900 underline transition-colors">
+                  Explore Demo Space
+                </Link>
+                <span>•</span>
+                <Link href="/helper" className="hover:text-stone-900 underline transition-colors">
+                  Helper PIN Access
+                </Link>
+              </div>
+            </div>
           )}
         </div>
 
@@ -171,51 +227,59 @@ export default function HeroSection() {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* World 1: For Families */}
             <Link
               href="/helpers/browse"
-              className="group p-4 rounded-2xl bg-stone-50/80 hover:bg-[#FFF5F4] border border-stone-200/70 hover:border-softly-coral/50 transition-all duration-200 flex flex-col justify-between"
+              className="group p-5 rounded-3xl bg-white/90 hover:bg-[#FFF5F4] border border-stone-200/90 hover:border-softly-coral/60 transition-all duration-200 flex flex-col justify-between shadow-xs hover:shadow-soft"
             >
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-xs font-bold text-stone-900 flex items-center gap-1.5">
-                    <span>🏡</span> Looking for a Caregiver?
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-bold text-stone-900 flex items-center gap-2">
+                    <span className="text-lg">🏡</span> Looking for a Caregiver?
                   </span>
-                  <span className="text-[10px] uppercase font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-full">
-                    Available Now
+                  <span className="text-[10px] uppercase font-bold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded-full border border-emerald-200">
+                    50+ Cities
                   </span>
                 </div>
-                <p className="text-[11px] text-stone-600 leading-relaxed mb-3">
+                <p className="text-xs text-stone-600 leading-relaxed mb-4">
                   Find verified live-in &amp; visiting helpers for bedridden care, dementia, mobility &amp; vitals in Amalapuram, Hyderabad, Bangalore &amp; more.
                 </p>
               </div>
-              <span className="text-xs font-bold text-stone-900 group-hover:text-softly-coral inline-flex items-center gap-1">
-                Browse Verified Helpers <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
-              </span>
+
+              {/* Big Pill Button Styled Similar to Register Family */}
+              <div className="w-full py-3 sm:py-3.5 px-5 rounded-full bg-softly-coral hover:bg-[#ffa8a2] active:scale-98 text-softly-text font-bold text-xs sm:text-sm shadow-soft transition-all duration-200 flex items-center justify-center gap-2 mt-2 group-hover:shadow-md">
+                <Search className="w-4 h-4 text-stone-800" />
+                <span>Browse Verified Helpers</span>
+                <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
+              </div>
             </Link>
 
             {/* World 2: For Helpers */}
             <Link
               href="/helpers/register"
-              className="group p-4 rounded-2xl bg-stone-50/80 hover:bg-emerald-50/50 border border-stone-200/70 hover:border-emerald-300/60 transition-all duration-200 flex flex-col justify-between"
+              className="group p-5 rounded-3xl bg-white/90 hover:bg-[#F2F8F5] border border-stone-200/90 hover:border-emerald-300 transition-all duration-200 flex flex-col justify-between shadow-xs hover:shadow-soft"
             >
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-xs font-bold text-stone-900 flex items-center gap-1.5">
-                    <span>🩺</span> Looking for Caregiver Jobs?
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-bold text-stone-900 flex items-center gap-2">
+                    <span className="text-lg">🩺</span> Looking for Caregiver Jobs?
                   </span>
-                  <span className="text-[10px] uppercase font-bold text-blue-700 bg-blue-100/70 px-1.5 py-0.5 rounded-full">
-                    Join Network
+                  <span className="text-[10px] uppercase font-bold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded-full border border-emerald-200">
+                    0% Fee
                   </span>
                 </div>
-                <p className="text-[11px] text-stone-600 leading-relaxed mb-3">
+                <p className="text-xs text-stone-600 leading-relaxed mb-4">
                   Create your profile in 2 mins. Set your daily/monthly pay, service cities, and receive direct calls &amp; WhatsApp chats from seekers.
                 </p>
               </div>
-              <span className="text-xs font-bold text-stone-900 group-hover:text-emerald-700 inline-flex items-center gap-1">
-                Register as a Helper <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
-              </span>
+
+              {/* Big Pill Button Styled Similar to Register Family */}
+              <div className="w-full py-3 sm:py-3.5 px-5 rounded-full bg-emerald-700 hover:bg-emerald-800 active:scale-98 text-white font-bold text-xs sm:text-sm shadow-soft transition-all duration-200 flex items-center justify-center gap-2 mt-2 group-hover:shadow-md">
+                <Briefcase className="w-4 h-4 text-white" />
+                <span>Register as a Helper</span>
+                <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
+              </div>
             </Link>
           </div>
         </div>
