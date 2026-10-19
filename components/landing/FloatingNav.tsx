@@ -29,15 +29,24 @@ export default function FloatingNav() {
           </Link>
 
           {/* Links */}
-          <div className="hidden md:flex items-center gap-6 text-[14px] font-medium text-stone-600">
+          <div className="hidden md:flex items-center gap-5 text-[14px] font-medium text-stone-600">
+            <Link
+              href="/helpers/browse"
+              className="text-stone-900 hover:text-softly-coral font-semibold transition-colors flex items-center gap-1.5"
+            >
+              <span>Find a Helper</span>
+              <span className="text-[10px] bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded-full font-bold">
+                Marketplace
+              </span>
+            </Link>
+            <Link
+              href="/helpers/register"
+              className="hover:text-softly-text transition-colors"
+            >
+              Helper Jobs
+            </Link>
             <Link href="#scenarios" className="hover:text-softly-text transition-colors">
               How It Works
-            </Link>
-            <Link href="#preview" className="hover:text-softly-text transition-colors">
-              Experience
-            </Link>
-            <Link href="#diary" className="hover:text-softly-text transition-colors">
-              Notes
             </Link>
             <Link href="#faq" className="hover:text-softly-text transition-colors">
               FAQ

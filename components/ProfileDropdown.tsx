@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { User, LogOut, LayoutDashboard, UserPlus, ChevronDown } from 'lucide-react';
+import { User, LogOut, LayoutDashboard, UserPlus, ChevronDown, Search, Briefcase } from 'lucide-react';
 
 interface AuthUser {
   id?: string;
@@ -156,6 +156,24 @@ export default function ProfileDropdown({ variant = 'nav' }: Props) {
             >
               <LayoutDashboard className="w-3.5 h-3.5 text-stone-500" />
               <span>Go to Care Dashboard</span>
+            </Link>
+
+            <Link
+              href="/helpers/browse"
+              onClick={() => setIsOpen(false)}
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-stone-700 hover:text-stone-950 hover:bg-stone-100 rounded-xl transition-colors"
+            >
+              <Search className="w-3.5 h-3.5 text-stone-500" />
+              <span>Find a Helper (Marketplace)</span>
+            </Link>
+
+            <Link
+              href="/helpers/profile"
+              onClick={() => setIsOpen(false)}
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-stone-700 hover:text-stone-950 hover:bg-stone-100 rounded-xl transition-colors"
+            >
+              <Briefcase className="w-3.5 h-3.5 text-stone-500" />
+              <span>Caregiver Hub &amp; Jobs</span>
             </Link>
 
             <Link

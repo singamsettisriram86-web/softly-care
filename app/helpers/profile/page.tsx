@@ -1,0 +1,366 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { ShieldCheck, MapPin, Briefcase, Phone, MessageSquare, ArrowLeft, RefreshCw, CheckCircle, Clock, Eye, AlertCircle, ToggleLeft, ToggleRight } from 'lucide-react';
+import { HelperMarketplaceProfile, HelperLead } from '@/lib/types';
+import FloatingNav from '@/components/landing/FloatingNav';
+
+export default function HelperProfileDashboard() {
+  const [helper, setHelper] = useState<HelperMarketplaceProfile | null>(null);
+  const [leads, setLeads] = useState<HelperLead[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [updatingAvailability, setUpdatingAvailability] = useState(false);
+  const [lookupPhone, setLookupPhone] = useState('');
+  const [lookupError, setLookupError] = useState('');
+
+  const loadHelper = async (id: string) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/marketplace/helpers?id=${id}`);
+      const data = await res.json();
+      if (data.success && data.helper) {
+        setHelper(data.helper);
+
+        // Also fetch leads
+        const leadsRes = await fetch(`/api/marketplace/leads?helperId=${id}`);
+        const leadsData = await leadsRes.json();
+        if (leadsData.success) {
+          setLeads(leadsData.leads || []);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load helper profile:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // Check URL or localStorage
+    const params = new URLSearchParams(window.location.search);
+    const idFromUrl = params.get('id');
+    const storedId = typeof window !== 'undefined' ? localStorage.getItem('softly_marketplace_helper_id') : null;
+
+    const targetId = idFromUrl || storedId || 'hlp-101'; // Fallback to first sample helper for demo
+    if (targetId) {
+      loadHelper(targetId);
+    } else {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleToggleAvailability = async () => {
+    if (!helper) return;
+    setUpdatingAvailability(true);
+    const newStatus = !helper.is_available;
+    try {
+      const res = await fetch('/api/marketplace/helpers', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: helper.id,
+          is_available: newStatus,
+          availability_note: newStatus ? 'Available immediately' : 'Currently employed with a family',
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.helper) {
+        setHelper(data.helper);
+      }
+    } catch (e) {
+      console.error('Failed to toggle availability:', e);
+    } finally {
+      setUpdatingAvailability(false);
+    }
+  };
+
+  const handlePhoneLookup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!lookupPhone.trim()) return;
+    setLoading(true);
+    setLookupError('');
+    try {
+      const clean = lookupPhone.trim().slice(-10);
+      const res = await fetch(`/api/marketplace/helpers?search=${clean}`);
+      const data = await res.json();
+      if (data.success && data.helpers && data.helpers.length > 0) {
+        const found = data.helpers[0];
+        setHelper(found);
+        localStorage.setItem('softly_marketplace_helper_id', found.id);
+        const leadsRes = await fetch(`/api/marketplace/leads?helperId=${found.id}`);
+        const leadsData = await leadsRes.json();
+        if (leadsData.success) setLeads(leadsData.leads || []);
+      } else {
+        setLookupError('No caregiver profile found matching this mobile number.');
+      }
+    } catch {
+      setLookupError('Lookup failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#FDFCF8] text-[#292524] flex flex-col font-sans selection:bg-[#FFB7B2]/40">
+      <FloatingNav />
+
+      <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 pt-28 pb-16 w-full">
+        {/* Top Link */}
+        <div className="flex items-center justify-between gap-3 mb-6">
+          <Link
+            href="/helpers/browse"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-stone-500 hover:text-stone-900 transition-colors"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Browse All Helpers Directory</span>
+          </Link>
+
+          <Link
+            href="/helpers/register"
+            className="text-xs font-bold text-stone-600 hover:text-stone-900 hover:underline"
+          >
+            + Register Another Profile
+          </Link>
+        </div>
+
+        {loading ? (
+          <div className="text-center py-20 bg-white rounded-3xl border border-stone-200 space-y-3">
+            <RefreshCw className="w-6 h-6 animate-spin text-stone-400 mx-auto" />
+            <p className="text-xs text-stone-500 font-medium">Loading your caregiver dashboard...</p>
+          </div>
+        ) : !helper ? (
+          <div className="bg-white rounded-3xl p-8 border border-stone-200 text-center max-w-md mx-auto space-y-4">
+            <div className="w-12 h-12 rounded-full bg-stone-100 flex items-center justify-center text-xl mx-auto">
+              📱
+            </div>
+            <h2 className="text-xl font-bold text-stone-900">Manage Your Helper Profile</h2>
+            <p className="text-xs text-stone-500">
+              Enter your registered mobile number to access your helper dashboard and toggle availability.
+            </p>
+
+            {lookupError && (
+              <div className="p-3 bg-red-50 text-red-700 text-xs rounded-2xl border border-red-200">
+                {lookupError}
+              </div>
+            )}
+
+            <form onSubmit={handlePhoneLookup} className="space-y-3">
+              <input
+                type="tel"
+                placeholder="Enter 10-digit mobile number"
+                value={lookupPhone}
+                onChange={(e) => setLookupPhone(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-2xl bg-stone-50 border border-stone-200 text-xs text-stone-800 outline-none focus:ring-2 focus:ring-[#FFB7B2]/70"
+              />
+              <button
+                type="submit"
+                className="w-full py-2.5 rounded-full font-bold text-xs"
+                style={{ background: '#FFB7B2', color: '#292524' }}
+              >
+                Find My Profile
+              </button>
+            </form>
+
+            <div className="pt-2">
+              <Link href="/helpers/register" className="text-xs font-bold text-softly-coral hover:underline">
+                New here? Register as a Caregiver →
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* Header Greeting */}
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div>
+                <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider block">
+                  Caregiver Work Portal
+                </span>
+                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-stone-900 mt-0.5">
+                  Welcome, {helper.name}!
+                </h1>
+                <p className="text-xs text-stone-500 mt-1">
+                  Your profile is listed in <strong className="text-stone-800">{helper.base_city}</strong> and {helper.service_cities?.length || 1} service cities.
+                </p>
+              </div>
+
+              {/* Public link */}
+              <Link
+                href="/helpers/browse"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-stone-100 hover:bg-stone-200 text-xs font-bold text-stone-700 transition-colors shadow-2xs"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                <span>View Public Directory</span>
+              </Link>
+            </div>
+
+            {/* Big Availability Switch Card */}
+            <div className={`p-6 rounded-3xl border transition-all ${
+              helper.is_available
+                ? 'bg-gradient-to-br from-emerald-50/80 to-white border-emerald-200/90 shadow-sm'
+                : 'bg-gradient-to-br from-stone-100 to-white border-stone-200'
+            }`}>
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className={`w-2.5 h-2.5 rounded-full ${helper.is_available ? 'bg-emerald-500 animate-pulse' : 'bg-stone-400'}`} />
+                    <span className="text-xs font-bold uppercase tracking-wider text-stone-500">
+                      Live Availability Status
+                    </span>
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-bold text-stone-900">
+                    {helper.is_available
+                      ? '🟢 Currently Open for Work (Visible to Families)'
+                      : '🔴 Currently Employed / Busy (Hidden from Search)'}
+                  </h3>
+                  <p className="text-xs text-stone-500">
+                    {helper.is_available
+                      ? 'Families can find you and click to call or chat on WhatsApp.'
+                      : 'You are temporarily off the marketplace. Toggle back on when ready for new clients.'}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleToggleAvailability}
+                  disabled={updatingAvailability}
+                  className={`px-5 py-3 rounded-full text-xs font-bold shadow-xs transition-all active:scale-95 flex items-center gap-2 ${
+                    helper.is_available
+                      ? 'bg-stone-900 text-white hover:bg-stone-800'
+                      : 'bg-emerald-600 text-white hover:bg-emerald-700'
+                  }`}
+                >
+                  {updatingAvailability ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : helper.is_available ? (
+                    <>
+                      <ToggleRight className="w-4 h-4" />
+                      <span>Set as Employed (Hide)</span>
+                    </>
+                  ) : (
+                    <>
+                      <ToggleLeft className="w-4 h-4" />
+                      <span>Set as Available Now</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* 2-Column: Live Profile Preview & Inquiries */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Profile Card Preview */}
+              <div className="bg-white rounded-3xl p-6 border border-stone-200/80 shadow-xs space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider block">
+                    Your Public Listing Preview
+                  </span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-bold border border-emerald-200">
+                    Verified
+                  </span>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-100 text-stone-800 flex items-center justify-center font-bold text-lg shrink-0">
+                    {helper.name.charAt(0)}
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-stone-900">{helper.name}</h4>
+                    <p className="text-xs text-stone-500">
+                      {helper.base_city} • {helper.experience_years}+ Yrs Exp
+                    </p>
+                    <span className="inline-block mt-1 text-[11px] px-2 py-0.5 rounded-full bg-stone-100 text-stone-700 font-semibold">
+                      {helper.helper_type === 'live_in' ? '🏠 Live-in Caregiver' : '🚗 Visiting Helper'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="text-xs text-stone-600 space-y-1.5 pt-2 border-t border-stone-100">
+                  <div className="flex justify-between">
+                    <span className="text-stone-400">Monthly Pay:</span>
+                    <span className="font-bold text-stone-900">{helper.expected_salary || '₹15,000/mo'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-stone-400">Daily Pay:</span>
+                    <span className="font-semibold text-stone-800">{helper.daily_rate || '₹600/day'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-stone-400">Service Cities:</span>
+                    <span className="font-medium text-stone-800">{helper.service_cities?.join(', ') || helper.base_city}</span>
+                  </div>
+                  {helper.upi_id && (
+                    <div className="flex justify-between">
+                      <span className="text-stone-400">UPI ID:</span>
+                      <span className="font-mono text-stone-700">{helper.upi_id}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="pt-2">
+                  <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block mb-1.5">
+                    Skills Showcased:
+                  </span>
+                  <div className="flex flex-wrap gap-1">
+                    {(helper.skills || []).map((s) => (
+                      <span key={s} className="px-2 py-0.5 rounded-lg bg-stone-100 text-stone-700 text-[10px] font-medium">
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Family Inquiries / Leads */}
+              <div className="bg-white rounded-3xl p-6 border border-stone-200/80 shadow-xs flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider block">
+                      Interested Families ({leads.length})
+                    </span>
+                    <span className="text-xs text-stone-400">Recent Inquiries</span>
+                  </div>
+
+                  {leads.length > 0 ? (
+                    <div className="space-y-3">
+                      {leads.map((lead) => (
+                        <div
+                          key={lead.id}
+                          className="p-3.5 rounded-2xl bg-stone-50 border border-stone-100 text-xs space-y-1"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-stone-900">{lead.seeker_name}</span>
+                            <span className="text-[10px] text-stone-400">
+                              {lead.created_at ? new Date(lead.created_at).toLocaleDateString('en-IN') : 'Recent'}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-stone-600">
+                            <span>Phone: +91 {lead.seeker_phone}</span>
+                            {lead.seeker_city && <span className="text-stone-500 font-medium">{lead.seeker_city}</span>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-10 text-stone-400 space-y-2">
+                      <Clock className="w-6 h-6 mx-auto text-stone-300" />
+                      <p className="text-xs">No family inquiries yet.</p>
+                      <p className="text-[11px] text-stone-400 max-w-xs mx-auto">
+                        Make sure your status is set to &quot;Available Now&quot; so families searching in {helper.base_city} can discover you.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="pt-4 border-t border-stone-100 text-center">
+                  <p className="text-[11px] text-stone-400">
+                    💡 Tip: When families call you, mention that you are a verified Softly caregiver.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}

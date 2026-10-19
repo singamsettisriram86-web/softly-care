@@ -151,6 +151,74 @@ export default function HeroSection() {
             </Link>
           )}
         </div>
+
+        {/* Marketplace 2-World Discovery Banner */}
+        <div className="mt-12 w-full max-w-2xl bg-white/85 backdrop-blur-md border border-stone-200/90 rounded-3xl p-5 sm:p-6 shadow-soft text-left">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 mb-4 border-b border-stone-100 gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">🤝</span>
+              <div>
+                <h3 className="text-xs sm:text-sm font-bold text-stone-900 tracking-tight">
+                  Softly Caregiver Marketplace
+                </h3>
+                <p className="text-[11px] sm:text-xs text-stone-500">
+                  India's direct network connecting elderly caregivers &amp; families
+                </p>
+              </div>
+            </div>
+            <span className="self-start sm:self-auto text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/60">
+              0% Commission · Direct WhatsApp
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            {/* World 1: For Families */}
+            <Link
+              href="/helpers/browse"
+              className="group p-4 rounded-2xl bg-stone-50/80 hover:bg-[#FFF5F4] border border-stone-200/70 hover:border-softly-coral/50 transition-all duration-200 flex flex-col justify-between"
+            >
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-bold text-stone-900 flex items-center gap-1.5">
+                    <span>🏡</span> Looking for a Caregiver?
+                  </span>
+                  <span className="text-[10px] uppercase font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-full">
+                    Available Now
+                  </span>
+                </div>
+                <p className="text-[11px] text-stone-600 leading-relaxed mb-3">
+                  Find verified live-in &amp; visiting helpers for bedridden care, dementia, mobility &amp; vitals in Amalapuram, Hyderabad, Bangalore &amp; more.
+                </p>
+              </div>
+              <span className="text-xs font-bold text-stone-900 group-hover:text-softly-coral inline-flex items-center gap-1">
+                Browse Verified Helpers <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
+              </span>
+            </Link>
+
+            {/* World 2: For Helpers */}
+            <Link
+              href="/helpers/register"
+              className="group p-4 rounded-2xl bg-stone-50/80 hover:bg-emerald-50/50 border border-stone-200/70 hover:border-emerald-300/60 transition-all duration-200 flex flex-col justify-between"
+            >
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-bold text-stone-900 flex items-center gap-1.5">
+                    <span>🩺</span> Looking for Caregiver Jobs?
+                  </span>
+                  <span className="text-[10px] uppercase font-bold text-blue-700 bg-blue-100/70 px-1.5 py-0.5 rounded-full">
+                    Join Network
+                  </span>
+                </div>
+                <p className="text-[11px] text-stone-600 leading-relaxed mb-3">
+                  Create your profile in 2 mins. Set your daily/monthly pay, service cities, and receive direct calls &amp; WhatsApp chats from seekers.
+                </p>
+              </div>
+              <span className="text-xs font-bold text-stone-900 group-hover:text-emerald-700 inline-flex items-center gap-1">
+                Register as a Helper <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
+              </span>
+            </Link>
+          </div>
+        </div>
       </div>
     </section>
   );

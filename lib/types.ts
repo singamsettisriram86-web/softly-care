@@ -106,3 +106,38 @@ export interface WhatsAppMessage {
   timestamp: string;
   status: 'sent' | 'delivered' | 'read' | 'received';
 }
+
+export interface HelperMarketplaceProfile {
+  id: string;
+  user_id?: string;
+  name: string;
+  phone: string;
+  whatsapp?: string;
+  gender?: 'Male' | 'Female' | 'Other';
+  age?: number;
+  base_city: string;
+  service_cities: string[];
+  helper_type: 'live_in' | 'visiting' | 'both';
+  experience_years: number;
+  skills: string[];
+  languages: string[];
+  expected_salary?: string;
+  daily_rate?: string;
+  bio?: string;
+  upi_id?: string;
+  is_verified: boolean;
+  is_available: boolean;
+  availability_note?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface HelperLead {
+  id: string;
+  helper_id: string;
+  seeker_name: string;
+  seeker_phone: string;
+  seeker_city?: string;
+  created_at?: string;
+}
+

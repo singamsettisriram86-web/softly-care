@@ -8,6 +8,8 @@ import {
   HelperTask,
   HelperPayment,
   WhatsAppMessage,
+  HelperMarketplaceProfile,
+  HelperLead,
 } from './types';
 import { supabaseDataRepository } from './supabase-repository';
 
@@ -751,7 +753,105 @@ export class MemoryDataRepository {
     }
     return newMsg;
   }
+
+  // Marketplace Methods
+  async getMarketplaceHelpers(filters?: {
+    city?: string;
+    helper_type?: string;
+    skill?: string;
+    available_only?: boolean;
+    search?: string;
+  }): Promise<HelperMarketplaceProfile[]> {
+    if (this.isSupabaseEnabled()) {
+      try {
+        return await supabaseDataRepository.getMarketplaceHelpers(filters);
+      } catch (e) {
+        console.warn('[DataRepository] getMarketplaceHelpers error:', e);
+      }
+    }
+    return [];
+  }
+
+  async getMarketplaceHelperById(id: string): Promise<HelperMarketplaceProfile | undefined> {
+    if (this.isSupabaseEnabled()) {
+      try {
+        return await supabaseDataRepository.getMarketplaceHelperById(id);
+      } catch (e) {
+        console.warn('[DataRepository] getMarketplaceHelperById error:', e);
+      }
+    }
+    return undefined;
+  }
+
+  async createMarketplaceHelper(
+    profile: Omit<HelperMarketplaceProfile, 'id' | 'created_at' | 'updated_at'>
+  ): Promise<HelperMarketplaceProfile> {
+    if (this.isSupabaseEnabled()) {
+      try {
+        return await supabaseDataRepository.createMarketplaceHelper(profile);
+      } catch (e) {
+        console.warn('[DataRepository] createMarketplaceHelper error:', e);
+      }
+    }
+    const id = `hlp-${Date.now()}`;
+    return {
+      ...profile,
+      id,
+      is_verified: true,
+      is_available: true,
+      availability_note: 'Available immediately',
+    };
+  }
+
+  async updateMarketplaceHelper(
+    id: string,
+    updates: Partial<HelperMarketplaceProfile>
+  ): Promise<HelperMarketplaceProfile | undefined> {
+    if (this.isSupabaseEnabled()) {
+      try {
+        return await supabaseDataRepository.updateMarketplaceHelper(id, updates);
+      } catch (e) {
+        console.warn('[DataRepository] updateMarketplaceHelper error:', e);
+      }
+    }
+    return undefined;
+  }
+
+  async createHelperLead(lead: {
+    helper_id: string;
+    seeker_name: string;
+    seeker_phone: string;
+    seeker_city?: string;
+  }): Promise<HelperLead> {
+    if (this.isSupabaseEnabled()) {
+      try {
+        return await supabaseDataRepository.createHelperLead(lead);
+      } catch (e) {
+        console.warn('[DataRepository] createHelperLead error:', e);
+      }
+    }
+    return {
+      id: `lead-${Date.now()}`,
+      helper_id: lead.helper_id,
+      seeker_name: lead.seeker_name,
+      seeker_phone: lead.seeker_phone,
+      seeker_city: lead.seeker_city,
+      created_at: new Date().toISOString(),
+    };
+  }
+
+  async getHelperLeads(helperId: string): Promise<HelperLead[]> {
+    if (this.isSupabaseEnabled()) {
+      try {
+        return await supabaseDataRepository.getHelperLeads(helperId);
+      } catch (e) {
+        console.warn('[DataRepository] getHelperLeads error:', e);
+      }
+    }
+    return [];
+  }
 }
 
 // Global singleton instance for local runtime and development
 export const memoryDataRepository = new MemoryDataRepository();
+

@@ -9,6 +9,8 @@ import {
   HelperTask,
   HelperPayment,
   WhatsAppMessage,
+  HelperMarketplaceProfile,
+  HelperLead,
 } from './types';
 
 export class SupabaseDataRepository {
@@ -440,6 +442,148 @@ export class SupabaseDataRepository {
     await supabase.from('whatsapp_messages').insert([newMsg]);
     return newMsg;
   }
+
+  // Helper Marketplace
+  async getMarketplaceHelpers(filters?: {
+    city?: string;
+    helper_type?: string;
+    skill?: string;
+    available_only?: boolean;
+    search?: string;
+  }): Promise<HelperMarketplaceProfile[]> {
+    let query = supabase
+      .from('helper_marketplace_profiles')
+      .select('*')
+      .order('is_available', { ascending: false })
+      .order('experience_years', { ascending: false });
+
+    if (filters?.available_only) {
+      query = query.eq('is_available', true);
+    }
+
+    if (filters?.helper_type && filters.helper_type !== 'all') {
+      if (filters.helper_type === 'live_in') {
+        query = query.in('helper_type', ['live_in', 'both']);
+      } else if (filters.helper_type === 'visiting') {
+        query = query.in('helper_type', ['visiting', 'both']);
+      }
+    }
+
+    const { data, error } = await query;
+    if (error || !data) return [];
+
+    let results = data as HelperMarketplaceProfile[];
+
+    // City filter (matches either base_city or within service_cities array)
+    if (filters?.city && filters.city !== 'all') {
+      const cityLower = filters.city.trim().toLowerCase();
+      results = results.filter((h) => {
+        const inBase = h.base_city?.toLowerCase().includes(cityLower);
+        const inService = (h.service_cities || []).some((sc) => sc.toLowerCase().includes(cityLower));
+        return inBase || inService;
+      });
+    }
+
+    // Skill filter
+    if (filters?.skill && filters.skill !== 'all') {
+      const skillLower = filters.skill.trim().toLowerCase();
+      results = results.filter((h) =>
+        (h.skills || []).some((s) => s.toLowerCase().includes(skillLower))
+      );
+    }
+
+    // Text search query
+    if (filters?.search && filters.search.trim()) {
+      const term = filters.search.trim().toLowerCase();
+      results = results.filter((h) =>
+        h.name.toLowerCase().includes(term) ||
+        h.base_city.toLowerCase().includes(term) ||
+        (h.bio && h.bio.toLowerCase().includes(term)) ||
+        (h.skills || []).some((s) => s.toLowerCase().includes(term)) ||
+        (h.languages || []).some((l) => l.toLowerCase().includes(term))
+      );
+    }
+
+    return results;
+  }
+
+  async getMarketplaceHelperById(id: string): Promise<HelperMarketplaceProfile | undefined> {
+    const { data, error } = await supabase
+      .from('helper_marketplace_profiles')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (error || !data) return undefined;
+    return data as HelperMarketplaceProfile;
+  }
+
+  async createMarketplaceHelper(
+    profile: Omit<HelperMarketplaceProfile, 'id' | 'created_at' | 'updated_at'>
+  ): Promise<HelperMarketplaceProfile> {
+    const id = `hlp-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+    const newHelper: HelperMarketplaceProfile = {
+      ...profile,
+      id,
+      is_verified: true,
+      is_available: profile.is_available !== undefined ? profile.is_available : true,
+      availability_note: profile.availability_note || 'Available immediately',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    await supabase.from('helper_marketplace_profiles').insert([newHelper]);
+    return newHelper;
+  }
+
+  async updateMarketplaceHelper(
+    id: string,
+    updates: Partial<HelperMarketplaceProfile>
+  ): Promise<HelperMarketplaceProfile | undefined> {
+    const { data, error } = await supabase
+      .from('helper_marketplace_profiles')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select()
+      .maybeSingle();
+
+    if (error || !data) return undefined;
+    return data as HelperMarketplaceProfile;
+  }
+
+  async createHelperLead(lead: {
+    helper_id: string;
+    seeker_name: string;
+    seeker_phone: string;
+    seeker_city?: string;
+  }): Promise<HelperLead> {
+    const newLead: HelperLead = {
+      id: `lead-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      helper_id: lead.helper_id,
+      seeker_name: lead.seeker_name.trim(),
+      seeker_phone: lead.seeker_phone.trim(),
+      seeker_city: lead.seeker_city ? lead.seeker_city.trim() : undefined,
+      created_at: new Date().toISOString(),
+    };
+
+    await supabase.from('helper_leads').insert([newLead]);
+    return newLead;
+  }
+
+  async getHelperLeads(helperId: string): Promise<HelperLead[]> {
+    const { data, error } = await supabase
+      .from('helper_leads')
+      .select('*')
+      .eq('helper_id', helperId)
+      .order('created_at', { ascending: false });
+
+    if (error || !data) return [];
+    return data as HelperLead[];
+  }
 }
 
 export const supabaseDataRepository = new SupabaseDataRepository();
+
