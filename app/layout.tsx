@@ -2,6 +2,8 @@ import './globals.css';
 import type { Metadata, Viewport } from 'next';
 import GrainOverlay from '@/components/GrainOverlay';
 import PwaRegister from '@/components/PwaRegister';
+import PwaBackHandler from '@/components/PwaBackHandler';
+import MobileBottomNav from '@/components/MobileBottomNav';
 
 export const metadata: Metadata = {
   title: 'Softly — Elderly Care Coordinator',
@@ -68,10 +70,12 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="bg-softly-bg text-softly-text relative min-h-screen antialiased selection:bg-softly-coral/30 selection:text-softly-text">
+      <body className="bg-softly-bg text-softly-text relative min-h-screen antialiased selection:bg-softly-coral/30 selection:text-softly-text pb-16 md:pb-0">
         <GrainOverlay />
         <PwaRegister />
+        <PwaBackHandler />
         {children}
+        <MobileBottomNav />
       </body>
     </html>
   );

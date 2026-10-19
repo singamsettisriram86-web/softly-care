@@ -9,11 +9,25 @@
   --font-reenie: 'Reenie Beanie', cursive;
 }
 
+/* Eliminate tap delay & unsightly tap highlight boxes on mobile screens */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
 body {
   background-color: #FDFCF8;
   color: #292524;
   font-family: var(--font-outfit);
   overflow-x: hidden;
+  overscroll-behavior-y: contain;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -30,4 +44,13 @@ body {
 /* Soft transition effects */
 .soft-transition {
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Interactive touch active states */
+@media (hover: none) {
+  button:active,
+  a:active {
+    transform: scale(0.97);
+    transition: transform 0.1s ease;
+  }
 }

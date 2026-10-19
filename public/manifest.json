@@ -2,12 +2,36 @@
   "name": "Softly — Elderly Care Coordinator",
   "short_name": "Softly",
   "description": "Mindful care coordination for aging parents across cities",
-  "start_url": "/dashboard",
+  "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#FDFCF8",
   "theme_color": "#FFB7B2",
+  "categories": ["medical", "lifestyle", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Find a Caregiver",
+      "short_name": "Helpers",
+      "description": "Browse verified elderly caregivers in your city",
+      "url": "/helpers/browse",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Family Dashboard",
+      "short_name": "Dashboard",
+      "description": "Medicine reminders & appointments",
+      "url": "/dashboard",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Helper Jobs",
+      "short_name": "Care Jobs",
+      "description": "Explore caregiver jobs in India",
+      "url": "/helpers/jobs",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
   "icons": [
     {
       "src": "/icon-192.png",
