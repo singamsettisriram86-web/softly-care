@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const helperId = searchParams.get('helperId');
+    const helperId = searchParams.get('helperId') || searchParams.get('helper_id');
 
     if (!helperId) {
       return NextResponse.json({ success: false, error: 'helperId query param required' }, { status: 400 });
