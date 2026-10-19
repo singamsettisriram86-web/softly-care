@@ -114,3 +114,24 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ success: false, error: 'Helper profile id required.' }, { status: 400 });
+    }
+
+    const deleted = await memoryDataRepository.deleteMarketplaceHelper(id);
+    if (!deleted) {
+      return NextResponse.json({ success: false, error: 'Failed to delete helper profile.' }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, message: 'Helper profile deleted successfully.' });
+  } catch (error: any) {
+    console.error('[API Marketplace Helpers DELETE Error]:', error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}

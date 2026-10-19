@@ -2,9 +2,27 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ShieldCheck, MapPin, Briefcase, Phone, MessageSquare, ArrowLeft, RefreshCw, CheckCircle, Clock, Eye, AlertCircle, ToggleLeft, ToggleRight } from 'lucide-react';
+import {
+  ShieldCheck,
+  MapPin,
+  Briefcase,
+  Phone,
+  MessageSquare,
+  ArrowLeft,
+  RefreshCw,
+  CheckCircle,
+  Clock,
+  Eye,
+  AlertCircle,
+  ToggleLeft,
+  ToggleRight,
+  Edit3,
+  Trash2,
+} from 'lucide-react';
 import { HelperMarketplaceProfile, HelperLead } from '@/lib/types';
 import FloatingNav from '@/components/landing/FloatingNav';
+import EditHelperProfileModal from '@/components/marketplace/EditHelperProfileModal';
+import DeleteHelperConfirmModal from '@/components/marketplace/DeleteHelperConfirmModal';
 
 export default function HelperProfileDashboard() {
   const [helper, setHelper] = useState<HelperMarketplaceProfile | null>(null);
@@ -13,6 +31,12 @@ export default function HelperProfileDashboard() {
   const [updatingAvailability, setUpdatingAvailability] = useState(false);
   const [lookupPhone, setLookupPhone] = useState('');
   const [lookupError, setLookupError] = useState('');
+
+  // Modals & Notifications
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [toastMsg, setToastMsg] = useState('');
+  const [deletedNotice, setDeletedNotice] = useState(false);
 
   const loadHelper = async (id: string) => {
     setLoading(true);
@@ -129,6 +153,30 @@ export default function HelperProfileDashboard() {
             <RefreshCw className="w-6 h-6 animate-spin text-stone-400 mx-auto" />
             <p className="text-xs text-stone-500 font-medium">Loading your caregiver dashboard...</p>
           </div>
+        ) : deletedNotice ? (
+          <div className="bg-white rounded-3xl p-8 sm:p-10 border border-stone-200 text-center max-w-md mx-auto space-y-4 shadow-sm animate-in fade-in zoom-in-95">
+            <div className="w-14 h-14 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl mx-auto font-bold border border-emerald-100">
+              ✓
+            </div>
+            <h2 className="text-xl font-bold text-stone-900">Profile Successfully Deleted</h2>
+            <p className="text-xs text-stone-500 leading-relaxed">
+              Your helper profile and listings have been permanently removed from the Softly Marketplace. Families will no longer see your contact details.
+            </p>
+            <div className="pt-2 flex flex-col sm:flex-row gap-2.5 justify-center">
+              <Link
+                href="/helpers/browse"
+                className="px-5 py-2.5 rounded-full bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs shadow-xs transition-colors"
+              >
+                Browse Marketplace Directory
+              </Link>
+              <Link
+                href="/helpers/register"
+                className="px-5 py-2.5 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs transition-colors"
+              >
+                Register as a Helper
+              </Link>
+            </div>
+          </div>
         ) : !helper ? (
           <div className="bg-white rounded-3xl p-8 border border-stone-200 text-center max-w-md mx-auto space-y-4">
             <div className="w-12 h-12 rounded-full bg-stone-100 flex items-center justify-center text-xl mx-auto">
@@ -170,7 +218,23 @@ export default function HelperProfileDashboard() {
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Header Greeting */}
+            {/* Toast Notification */}
+            {toastMsg && (
+              <div className="p-3.5 bg-emerald-50 text-emerald-900 rounded-2xl border border-emerald-200 text-xs font-bold flex items-center justify-between shadow-2xs animate-in fade-in">
+                <span className="flex items-center gap-2">
+                  <span>✨</span>
+                  <span>{toastMsg}</span>
+                </span>
+                <button
+                  onClick={() => setToastMsg('')}
+                  className="text-emerald-700 hover:text-emerald-950 font-bold px-2 py-0.5 rounded"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
+            {/* Header Greeting & Actions */}
             <div className="flex items-start justify-between gap-4 flex-wrap">
               <div>
                 <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider block">
@@ -184,14 +248,35 @@ export default function HelperProfileDashboard() {
                 </p>
               </div>
 
-              {/* Public link */}
-              <Link
-                href="/helpers/browse"
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-stone-100 hover:bg-stone-200 text-xs font-bold text-stone-700 transition-colors shadow-2xs"
-              >
-                <Eye className="w-3.5 h-3.5" />
-                <span>View Public Directory</span>
-              </Link>
+              {/* Action Buttons: Edit, Delete, View */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold transition-all shadow-xs active:scale-95"
+                >
+                  <Edit3 className="w-3.5 h-3.5 text-stone-300" />
+                  <span>Edit Profile</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsDeleteModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-red-50 hover:bg-red-100 text-red-700 border border-red-200/80 text-xs font-bold transition-all shadow-2xs active:scale-95"
+                  title="Permanently remove your helper profile"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Delete Profile</span>
+                </button>
+
+                <Link
+                  href="/helpers/browse"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-stone-100 hover:bg-stone-200 text-xs font-bold text-stone-700 transition-colors shadow-2xs"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>Public Directory</span>
+                </Link>
+              </div>
             </div>
 
             {/* Big Availability Switch Card */}
@@ -255,9 +340,19 @@ export default function HelperProfileDashboard() {
                   <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider block">
                     Your Public Listing Preview
                   </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-bold border border-emerald-200">
-                    Verified
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsEditModalOpen(true)}
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-stone-700 hover:text-stone-950 bg-stone-100 hover:bg-stone-200 px-2.5 py-1 rounded-xl transition-colors shadow-2xs"
+                    >
+                      <Edit3 className="w-3 h-3 text-stone-500" />
+                      <span>Edit</span>
+                    </button>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-bold border border-emerald-200">
+                      Verified
+                    </span>
+                  </div>
                 </div>
 
                 <div className="flex items-start gap-3">
@@ -361,6 +456,30 @@ export default function HelperProfileDashboard() {
           </div>
         )}
       </main>
+
+      {/* Edit Profile Modal */}
+      <EditHelperProfileModal
+        isOpen={isEditModalOpen}
+        helper={helper}
+        onClose={() => setIsEditModalOpen(false)}
+        onUpdated={(updated) => {
+          setHelper(updated);
+          setToastMsg('Caregiver profile updated successfully!');
+          setTimeout(() => setToastMsg(''), 5000);
+        }}
+      />
+
+      {/* Delete Profile Confirmation Modal */}
+      <DeleteHelperConfirmModal
+        isOpen={isDeleteModalOpen}
+        helper={helper}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onDeleted={() => {
+          setIsDeleteModalOpen(false);
+          setHelper(null);
+          setDeletedNotice(true);
+        }}
+      />
     </div>
   );
 }

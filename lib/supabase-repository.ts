@@ -554,6 +554,22 @@ export class SupabaseDataRepository {
     return data as HelperMarketplaceProfile;
   }
 
+  async deleteMarketplaceHelper(id: string): Promise<boolean> {
+    try {
+      // First remove any captured leads for this helper
+      await supabase.from('helper_leads').delete().eq('helper_id', id);
+      // Remove the profile
+      const { error } = await supabase
+        .from('helper_marketplace_profiles')
+        .delete()
+        .eq('id', id);
+      return !error;
+    } catch (e) {
+      console.error('[SupabaseRepository] deleteMarketplaceHelper error:', e);
+      return false;
+    }
+  }
+
   async createHelperLead(lead: {
     helper_id: string;
     seeker_name: string;

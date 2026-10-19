@@ -817,6 +817,17 @@ export class MemoryDataRepository {
     return undefined;
   }
 
+  async deleteMarketplaceHelper(id: string): Promise<boolean> {
+    if (this.isSupabaseEnabled()) {
+      try {
+        return await supabaseDataRepository.deleteMarketplaceHelper(id);
+      } catch (e) {
+        console.warn('[DataRepository] deleteMarketplaceHelper error:', e);
+      }
+    }
+    return true;
+  }
+
   async createHelperLead(lead: {
     helper_id: string;
     seeker_name: string;
