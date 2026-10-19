@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { User, LogOut, LayoutDashboard, UserPlus, ChevronDown, Search, Briefcase } from 'lucide-react';
+import { User, LogOut, LayoutDashboard, UserPlus, ChevronDown, Search, Briefcase, Crown } from 'lucide-react';
 
 interface AuthUser {
   id?: string;
@@ -89,16 +89,19 @@ export default function ProfileDropdown({ variant = 'nav' }: Props) {
     return (
       <div className="flex items-center gap-2 sm:gap-3">
         <Link
-          href="/login?next=/register"
-          className="text-[13px] font-semibold text-stone-700 hover:text-stone-950 px-3 py-1.5 rounded-full hover:bg-stone-100 transition-colors"
+          href="/subscribe"
+          className="text-[13px] font-semibold text-stone-700 hover:text-stone-950 px-3 py-1.5 rounded-full hover:bg-stone-100 transition-colors flex items-center gap-1.5"
         >
-          + Register
+          <span>Subscribe</span>
+          <span className="text-[10px] bg-[#FFB7B2]/40 text-stone-900 font-bold px-1.5 py-0.2 rounded-full">
+            Premium
+          </span>
         </Link>
         <Link
-          href="/login"
+          href="/login?next=/register"
           className="bg-softly-text text-white hover:bg-stone-700 active:scale-95 text-[13px] sm:text-[14px] font-medium px-4 sm:px-5 py-2 rounded-full transition-all duration-200 shadow-sm"
         >
-          Launch Hub
+          + Register
         </Link>
       </div>
     );
@@ -183,6 +186,15 @@ export default function ProfileDropdown({ variant = 'nav' }: Props) {
             >
               <UserPlus className="w-3.5 h-3.5 text-stone-500" />
               <span>Register New Family Space</span>
+            </Link>
+
+            <Link
+              href="/subscribe"
+              onClick={() => setIsOpen(false)}
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-stone-700 hover:text-stone-950 hover:bg-stone-100 rounded-xl transition-colors"
+            >
+              <Crown className="w-3.5 h-3.5 text-amber-500" />
+              <span>Premium Membership</span>
             </Link>
           </div>
 
