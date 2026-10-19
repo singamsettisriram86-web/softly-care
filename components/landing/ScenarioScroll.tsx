@@ -57,7 +57,8 @@ const scenarios: Scenario[] = [
 
 export default function ScenarioScroll() {
   return (
-    <section id="scenarios" className="py-16 sm:py-24 overflow-hidden">
+    <section id="how-it-works" className="py-16 sm:py-24 overflow-hidden scroll-mt-20">
+      <div id="scenarios" className="scroll-mt-20" />
       <div className="max-w-5xl mx-auto px-4 mb-8 text-center sm:text-left">
         {/* Simple, clear badge */}
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-softly-sage/80 border border-stone-200/60 text-xs font-semibold text-stone-700 mb-3">

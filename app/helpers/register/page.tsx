@@ -466,6 +466,48 @@ export default function RegisterHelperPage() {
             </p>
           </div>
         </form>
+
+        {/* Caregiver Registration FAQs */}
+        <div id="faq" className="mt-12 bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/80 shadow-xs scroll-mt-24">
+          <div className="text-center mb-6">
+            <span className="text-[11px] uppercase font-bold tracking-wider text-stone-400 block mb-1">
+              Caregiver FAQs
+            </span>
+            <h3 className="text-lg sm:text-xl font-bold text-stone-900">
+              Frequently Asked Questions for Helpers
+            </h3>
+          </div>
+
+          <div className="space-y-3 max-w-xl mx-auto text-left text-xs">
+            <div className="p-4 rounded-2xl bg-stone-50 border border-stone-100">
+              <h4 className="font-bold text-stone-900 mb-1">💰 Does Softly take any agency cut from my salary?</h4>
+              <p className="text-stone-600 leading-relaxed">
+                Zero commission. You receive 100% of your earnings directly from the family via UPI or cash.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-stone-50 border border-stone-100">
+              <h4 className="font-bold text-stone-900 mb-1">📱 How do families contact me after I register?</h4>
+              <p className="text-stone-600 leading-relaxed">
+                Families browsing helpers in your city unlock your phone and WhatsApp numbers to call or message you directly.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-stone-50 border border-stone-100">
+              <h4 className="font-bold text-stone-900 mb-1">🔄 What if I find a job and don’t want calls?</h4>
+              <p className="text-stone-600 leading-relaxed">
+                Simply log into your Caregiver Work Portal (/helpers/profile) and tap &quot;Set as Employed&quot;. Your profile will be instantly hidden from search.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-stone-50 border border-stone-100">
+              <h4 className="font-bold text-stone-900 mb-1">🏠 What is the difference between Live-in and Visiting?</h4>
+              <p className="text-stone-600 leading-relaxed">
+                Live-in caregivers stay with the senior 24x7 (free room &amp; meals provided, avg ₹16,000–₹25,000/mo). Visiting attendants visit for 4 to 8 hours daily (avg ₹8,000–₹15,000/mo).
+              </p>
+            </div>
+          </div>
+        </div>
       </main>
     </div>
   );
