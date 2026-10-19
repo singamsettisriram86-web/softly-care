@@ -114,7 +114,13 @@ export class CashfreeService {
               customer_phone: customerPhone,
             },
             order_meta: {
-              return_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard?cf_order_id={order_id}`,
+              return_url: `${
+                process.env.NEXT_PUBLIC_APP_URL && !process.env.NEXT_PUBLIC_APP_URL.includes('localhost')
+                  ? process.env.NEXT_PUBLIC_APP_URL
+                  : process.env.NODE_ENV === 'production'
+                  ? 'https://softly-care.vercel.app'
+                  : 'http://localhost:3000'
+              }/dashboard?cf_order_id={order_id}`,
             },
             order_note: purpose,
           }),
