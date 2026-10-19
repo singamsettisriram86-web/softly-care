@@ -98,7 +98,7 @@ export default function ProfileDropdown({ variant = 'nav' }: Props) {
           </span>
         </Link>
         <Link
-          href="/login?next=/register"
+          href="/login?next=/dashboard"
           className="bg-softly-text text-white hover:bg-stone-700 active:scale-95 text-[13px] sm:text-[14px] font-medium px-4 sm:px-5 py-2 rounded-full transition-all duration-200 shadow-sm"
         >
           + Register

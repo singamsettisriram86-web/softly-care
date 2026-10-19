@@ -7,9 +7,10 @@ import { CheckCircle2, LogOut, Sparkles } from 'lucide-react';
 interface Props {
   onUserAuthenticated?: (user: GoogleUser) => void;
   className?: string;
+  nextPath?: string;
 }
 
-export default function GoogleSignInButton({ onUserAuthenticated, className = '' }: Props) {
+export default function GoogleSignInButton({ onUserAuthenticated, className = '', nextPath = '/dashboard' }: Props) {
   const [currentUser, setCurrentUser] = useState<GoogleUser | null>(null);
   const [isConfigured, setIsConfigured] = useState(false);
   const [authUrl, setAuthUrl] = useState('');
@@ -22,7 +23,7 @@ export default function GoogleSignInButton({ onUserAuthenticated, className = ''
     try {
       const [meRes, googleRes] = await Promise.all([
         fetch('/api/auth/me'),
-        fetch('/api/auth/google?next=/register'),
+        fetch(`/api/auth/google?next=${encodeURIComponent(nextPath)}`),
       ]);
       const meData = await meRes.json();
       const googleData = await googleRes.json();
