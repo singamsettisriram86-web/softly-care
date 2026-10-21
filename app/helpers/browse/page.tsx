@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Search, MapPin, Filter, Sparkles, UserPlus, ArrowLeft, RefreshCw, X, Check, ChevronDown } from 'lucide-react';
 import { HelperMarketplaceProfile } from '@/lib/types';
 import HelperCard from '@/components/marketplace/HelperCard';
@@ -105,8 +106,22 @@ const INDIAN_CITIES: IndianCity[] = [
 ];
 
 export default function BrowseHelpersPage() {
+  const router = useRouter();
   const [helpers, setHelpers] = useState<HelperMarketplaceProfile[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Authentication check: users must sign up or log in to find / browse helpers
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        const data = await res.json();
+        if (!data.authenticated) {
+          router.replace('/login?next=/helpers/browse&tab=signup');
+        }
+      } catch (_) {}
+    })();
+  }, [router]);
 
   // Filters
   const [selectedCity, setSelectedCity] = useState<string>('all');

@@ -39,8 +39,13 @@ function LoginContent() {
   const searchParams = useSearchParams();
   // Where to redirect after successful login
   const nextPath = searchParams.get('next') || searchParams.get('from') || '/dashboard';
+  const queryTab = searchParams.get('tab');
 
-  const [tab, setTab] = useState<'signin' | 'signup'>('signin');
+  const [tab, setTab] = useState<'signin' | 'signup'>(
+    queryTab === 'signup' || nextPath === '/register' || nextPath.includes('/helpers/register') || nextPath.includes('/helpers/browse')
+      ? 'signup'
+      : 'signin'
+  );
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -162,10 +167,16 @@ function LoginContent() {
             </div>
             <h1 className="text-2xl font-bold tracking-tight" style={{ color: '#292524' }}>Welcome to Softly</h1>
           </a>
-          <p className="text-sm text-center" style={{ color: '#78716C' }}>
+          <p className="text-sm text-center leading-relaxed" style={{ color: '#78716C' }}>
             {nextPath === '/register'
-              ? 'Sign in first — then we\'ll set up your family space.'
-              : 'Your family\'s care starts here — sign in to continue.'}
+              ? "Create your account first — then we'll set up your family space."
+              : nextPath.startsWith('/helpers/browse')
+              ? 'Sign up or sign in to browse and connect with verified elder caregivers.'
+              : nextPath.startsWith('/helpers/register')
+              ? 'Sign up or sign in to publish your caregiver job profile.'
+              : nextPath.startsWith('/helpers/profile')
+              ? 'Sign in to access your caregiver work portal.'
+              : "Your family's care starts here — sign in or create an account to continue."}
           </p>
         </div>
 

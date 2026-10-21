@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Sparkles, Check, ArrowRight, ShieldCheck } from 'lucide-react';
@@ -41,6 +41,23 @@ export default function RegisterHelperPage() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Authentication check: users must sign up or log in to register as a helper
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        const data = await res.json();
+        if (!data.authenticated) {
+          router.replace('/login?next=/helpers/register&tab=signup');
+          return;
+        }
+        if (data.user?.name && !name) {
+          setName(data.user.name);
+        }
+      } catch (_) {}
+    })();
+  }, [router]);
 
   const toggleSkill = (skill: string) => {
     setSelectedSkills((prev) =>

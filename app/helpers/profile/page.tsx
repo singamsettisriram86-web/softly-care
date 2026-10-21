@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   ShieldCheck,
   MapPin,
@@ -28,6 +29,7 @@ import EditHelperProfileModal from '@/components/marketplace/EditHelperProfileMo
 import DeleteHelperConfirmModal from '@/components/marketplace/DeleteHelperConfirmModal';
 
 export default function HelperProfileDashboard() {
+  const router = useRouter();
   const [helper, setHelper] = useState<HelperMarketplaceProfile | null>(null);
   const [leads, setLeads] = useState<HelperLead[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,6 +72,13 @@ export default function HelperProfileDashboard() {
     const initProfile = async () => {
       setLoading(true);
       try {
+        const authRes = await fetch('/api/auth/me');
+        const authData = await authRes.json();
+        if (!authData.authenticated) {
+          router.replace('/login?next=/helpers/profile&tab=signup');
+          return;
+        }
+
         const params = new URLSearchParams(window.location.search);
         const idFromUrl = params.get('id');
 
