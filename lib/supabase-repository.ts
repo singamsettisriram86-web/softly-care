@@ -118,40 +118,70 @@ export class SupabaseDataRepository {
     };
   }
 
-  async getUserFamily(user: { id?: string; name?: string; email?: string }): Promise<Family | undefined> {
-    if (!user) return undefined;
+  async getUserFamilies(user: { id?: string; name?: string; email?: string }): Promise<Family[]> {
+    if (!user) return [];
     try {
-      if (user.id) {
-        const { data: byUserId } = await supabase
-          .from('family_members')
-          .select('family_id')
-          .eq('role', 'caregiver')
-          .eq('user_id', user.id)
-          .order('id', { ascending: false })
-          .limit(1);
-        if (byUserId && byUserId.length > 0 && byUserId[0]?.family_id) {
-          const fam = await this.getFamily(byUserId[0].family_id);
-          if (fam) return fam;
+      const cleanEmail = user.email ? user.email.trim().toLowerCase() : '';
+      const userId = user.id ? user.id.trim() : '';
+
+      const familiesMap = new Map<string, Family>();
+
+      // 1. Query families by owner_email
+      if (cleanEmail) {
+        const { data: byEmail, error: errEmail } = await supabase
+          .from('families')
+          .select('*')
+          .ilike('owner_email', cleanEmail)
+          .order('created_at', { ascending: false });
+        if (!errEmail && byEmail) {
+          byEmail.forEach((f: Family) => familiesMap.set(f.id, f));
         }
       }
 
-      if (user.name) {
-        const { data: byName } = await supabase
+      // 2. Query families by user_id
+      if (userId) {
+        const { data: byUserId, error: errUid } = await supabase
+          .from('families')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false });
+        if (!errUid && byUserId) {
+          byUserId.forEach((f: Family) => familiesMap.set(f.id, f));
+        }
+
+        // 3. Query family_members for caregiver role with user_id
+        const { data: memberRows } = await supabase
           .from('family_members')
           .select('family_id')
           .eq('role', 'caregiver')
-          .ilike('name', user.name.trim())
-          .order('id', { ascending: false })
-          .limit(1);
-        if (byName && byName.length > 0 && byName[0]?.family_id) {
-          const fam = await this.getFamily(byName[0].family_id);
-          if (fam) return fam;
+          .eq('user_id', userId);
+
+        if (memberRows && memberRows.length > 0) {
+          const missingIds = memberRows
+            .map((m: any) => m.family_id)
+            .filter((fid: string) => fid && !familiesMap.has(fid));
+          if (missingIds.length > 0) {
+            const { data: memberFams } = await supabase
+              .from('families')
+              .select('*')
+              .in('id', missingIds);
+            if (memberFams) {
+              memberFams.forEach((f: Family) => familiesMap.set(f.id, f));
+            }
+          }
         }
       }
+
+      return Array.from(familiesMap.values());
     } catch (e) {
-      console.warn('[Supabase] getUserFamily error:', e);
+      console.warn('[Supabase] getUserFamilies error:', e);
+      return [];
     }
-    return undefined;
+  }
+
+  async getUserFamily(user: { id?: string; name?: string; email?: string }): Promise<Family | undefined> {
+    const fams = await this.getUserFamilies(user);
+    return fams[0];
   }
 
   async registerFamily(params: {
@@ -160,6 +190,7 @@ export class SupabaseDataRepository {
     caregiverPhone?: string;
     caregiverCity?: string;
     userId?: string;
+    userEmail?: string;
     careMembers?: { relation: string; name: string; city: string }[];
     helperName?: string;
     helperPhone?: string;
@@ -177,6 +208,8 @@ export class SupabaseDataRepository {
       id: familyId,
       name: params.familyName.trim(),
       invite_code: inviteCode,
+      user_id: params.userId || undefined,
+      owner_email: params.userEmail ? params.userEmail.trim().toLowerCase() : undefined,
       created_at: createdAt.toISOString(),
       trial_ends_at: trialEndsAt.toISOString(),
       subscription_status: 'trial',

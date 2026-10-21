@@ -87,33 +87,40 @@ export default function DashboardHeader({
             {dropdownOpen && (
               <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-2xl border border-stone-200 shadow-floating p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
                 <span className="text-[10px] uppercase font-bold text-stone-400 px-3 py-1 block">
-                  Switch Family Space
+                  Your Family Spaces ({families.length})
                 </span>
 
-                <div className="space-y-1 mb-2">
-                  {families.map((f) => (
-                    <button
-                      key={f.id}
-                      type="button"
-                      onClick={() => {
-                        if (onSelectFamily) onSelectFamily(f.id);
-                        setDropdownOpen(false);
-                      }}
-                      className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition-colors ${
-                        f.id === activeFamilyId
-                          ? 'bg-softly-sage/70 font-bold text-stone-900'
-                          : 'hover:bg-stone-50 text-stone-700'
-                      }`}
-                    >
-                      <span>{f.name}</span>
-                      <span className="text-[10px] text-stone-400 font-mono">
-                        {f.invite_code}
-                      </span>
-                    </button>
-                  ))}
-                </div>
+                {families.length === 0 ? (
+                  <div className="px-3 py-3 text-center text-xs text-stone-500 bg-stone-50 rounded-xl mb-2">
+                    <p className="font-semibold text-stone-700">No family space yet</p>
+                    <p className="text-[11px] text-stone-400 mt-0.5">Register below to create your private family space.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-1 mb-2">
+                    {families.map((f) => (
+                      <button
+                        key={f.id}
+                        type="button"
+                        onClick={() => {
+                          if (onSelectFamily) onSelectFamily(f.id);
+                          setDropdownOpen(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition-colors ${
+                          f.id === activeFamilyId
+                            ? 'bg-softly-sage/70 font-bold text-stone-900'
+                            : 'hover:bg-stone-50 text-stone-700'
+                        }`}
+                      >
+                        <span className="truncate pr-2">{f.name}</span>
+                        <span className="text-[10px] text-stone-400 font-mono shrink-0">
+                          {f.invite_code}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
 
-                <div className="pt-2 border-t border-stone-100">
+                <div className="pt-2 border-t border-stone-100 space-y-1">
                   <button
                     type="button"
                     onClick={() => {
@@ -124,6 +131,18 @@ export default function DashboardHeader({
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>+ Register New Family Space</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDropdownOpen(false);
+                      if (onSelectFamily) onSelectFamily('fam-sharma');
+                    }}
+                    className="w-full text-left px-3 py-1.5 rounded-xl text-[11px] font-medium text-stone-500 hover:text-stone-800 hover:bg-stone-50 flex items-center gap-1.5 transition-colors"
+                  >
+                    <span>🌟</span>
+                    <span>Explore Sharma Family (Demo)</span>
                   </button>
                 </div>
               </div>

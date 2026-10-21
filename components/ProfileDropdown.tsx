@@ -60,6 +60,7 @@ export default function ProfileDropdown({ variant = 'nav' }: Props) {
       setIsOpen(false);
       if (typeof window !== 'undefined') {
         localStorage.removeItem('softly_user');
+        localStorage.removeItem('softly_active_family_id');
       }
       router.push('/');
       router.refresh();

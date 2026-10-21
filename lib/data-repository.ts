@@ -321,27 +321,37 @@ export class MemoryDataRepository {
     return this.members.filter((m) => m.family_id === familyId);
   }
 
-  async getUserFamily(user: { id?: string; name?: string; email?: string }): Promise<Family | undefined> {
+  async getUserFamilies(user: { id?: string; name?: string; email?: string }): Promise<Family[]> {
     if (this.isSupabaseEnabled()) {
       try {
-        const fam = await supabaseDataRepository.getUserFamily(user);
-        if (fam) return fam;
+        const fams = await supabaseDataRepository.getUserFamilies(user);
+        if (fams) return fams;
       } catch (e) {
         // Fallback
       }
     }
 
-    if (!user) return undefined;
-    const member = this.members.find(
-      (m) =>
-        m.role === 'caregiver' &&
-        ((user.id && m.user_id === user.id) ||
-          (user.name && m.name.toLowerCase() === user.name.toLowerCase()))
-    );
-    if (member) {
-      return this.families.find((f) => f.id === member.family_id);
-    }
-    return undefined;
+    if (!user) return [];
+    const cleanEmail = user.email ? user.email.trim().toLowerCase() : '';
+    const userId = user.id ? user.id.trim() : '';
+
+    return this.families.filter((f) => {
+      if (cleanEmail && f.owner_email && f.owner_email.toLowerCase() === cleanEmail) return true;
+      if (userId && f.user_id && f.user_id === userId) return true;
+      const member = this.members.find(
+        (m) =>
+          m.family_id === f.id &&
+          m.role === 'caregiver' &&
+          ((userId && m.user_id === userId) ||
+            (cleanEmail && m.phone?.toLowerCase() === cleanEmail))
+      );
+      return !!member;
+    });
+  }
+
+  async getUserFamily(user: { id?: string; name?: string; email?: string }): Promise<Family | undefined> {
+    const fams = await this.getUserFamilies(user);
+    return fams[0];
   }
 
   async registerFamily(params: {
@@ -350,6 +360,7 @@ export class MemoryDataRepository {
     caregiverPhone?: string;
     caregiverCity?: string;
     userId?: string;
+    userEmail?: string;
     careMembers?: { relation: string; name: string; city: string }[];
     helperName?: string;
     helperPhone?: string;
@@ -364,6 +375,8 @@ export class MemoryDataRepository {
       id: familyId,
       name: params.familyName.trim(),
       invite_code: inviteCode,
+      user_id: params.userId,
+      owner_email: params.userEmail ? params.userEmail.trim().toLowerCase() : undefined,
       created_at: new Date().toISOString(),
     };
     this.families.push(newFamily);

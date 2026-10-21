@@ -7,23 +7,26 @@ export async function GET(req: NextRequest) {
   const pin = searchParams.get('pin');
   const checkMine = searchParams.get('check') === 'mine';
 
+  let user: { id?: string; email?: string; name?: string } | null = null;
+  try {
+    const userCookie = req.cookies.get('softly_user')?.value;
+    if (userCookie) {
+      user = JSON.parse(userCookie);
+    }
+  } catch { /* ignore */ }
+
   // Check if the currently logged-in user already has a registered family
   if (checkMine) {
-    try {
-      const userCookie = req.cookies.get('softly_user')?.value;
-      if (!userCookie) {
-        return NextResponse.json({ success: true, family: null, hasFamily: false });
-      }
-      const user = JSON.parse(userCookie);
-      const family = await memoryDataRepository.getUserFamily({
-        id: user.id,
-        name: user.name,
-        email: user.email || user.identifier,
-      });
-      return NextResponse.json({ success: true, family: family || null, hasFamily: !!family });
-    } catch {
-      return NextResponse.json({ success: true, family: null, hasFamily: false });
+    if (!user) {
+      return NextResponse.json({ success: true, family: null, hasFamily: false, families: [] });
     }
+    const userFamilies = await memoryDataRepository.getUserFamilies(user);
+    return NextResponse.json({
+      success: true,
+      family: userFamilies[0] || null,
+      hasFamily: userFamilies.length > 0,
+      families: userFamilies,
+    });
   }
 
   if (pin) {
@@ -36,11 +39,20 @@ export async function GET(req: NextRequest) {
   }
 
   if (familyId) {
-    const members = await memoryDataRepository.getMembers(familyId);
     const family = await memoryDataRepository.getFamily(familyId);
+    if (!family) {
+      return NextResponse.json({ success: false, error: 'Family space not found' }, { status: 404 });
+    }
+    const members = await memoryDataRepository.getMembers(familyId);
     return NextResponse.json({ success: true, family, members });
   }
-  const families = await memoryDataRepository.getAllFamilies();
+
+  // Account individuality: ONLY return families owned by/belonging to this authenticated user!
+  if (!user) {
+    return NextResponse.json({ success: true, families: [] });
+  }
+
+  const families = await memoryDataRepository.getUserFamilies(user);
   return NextResponse.json({ success: true, families });
 }
 
@@ -68,11 +80,13 @@ export async function POST(req: NextRequest) {
 
     // Read logged-in user to link the family to this caregiver account
     let userId: string | undefined;
+    let userEmail: string | undefined;
     try {
       const userCookie = req.cookies.get('softly_user')?.value;
       if (userCookie) {
         const user = JSON.parse(userCookie);
         userId = user.id;
+        userEmail = user.email || user.identifier;
       }
     } catch { /* ignore */ }
 
@@ -82,6 +96,7 @@ export async function POST(req: NextRequest) {
       caregiverPhone,
       caregiverCity,
       userId,
+      userEmail,
       careMembers: careMembers || [],
       helperName,
       helperPhone,

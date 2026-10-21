@@ -71,7 +71,7 @@ function CaregiverDashboardContent() {
 
   const fetchAllData = async (familyIdToUse?: string) => {
     try {
-      // 1. Fetch all families
+      // 1. Fetch authenticated user's own families
       const famsRes = await fetch('/api/families');
       const famsData = await famsRes.json();
       const availableFamilies: Family[] = famsData.success && famsData.families ? famsData.families : [];
@@ -79,23 +79,44 @@ function CaregiverDashboardContent() {
 
       // Determine which family ID to use
       let targetFamilyId = familyIdToUse;
+      if (!targetFamilyId && queryFamilyId) {
+        targetFamilyId = queryFamilyId;
+      }
       if (!targetFamilyId && typeof window !== 'undefined') {
         const stored = localStorage.getItem('softly_active_family_id');
-        if (stored && availableFamilies.some((f) => f.id === stored)) {
+        // Only accept stored family ID if it belongs to this user or is demo
+        if (stored && (stored === 'fam-sharma' || availableFamilies.some((f) => f.id === stored))) {
           targetFamilyId = stored;
+        } else {
+          localStorage.removeItem('softly_active_family_id');
         }
       }
-      if (!targetFamilyId && activeFamilyId && availableFamilies.some((f) => f.id === activeFamilyId)) {
+      if (!targetFamilyId && activeFamilyId && (activeFamilyId === 'fam-sharma' || availableFamilies.some((f) => f.id === activeFamilyId))) {
         targetFamilyId = activeFamilyId;
       }
       if (!targetFamilyId) {
-        // Pick first available family
+        // Default to user's first family, or empty string if user has none
         targetFamilyId = availableFamilies[0]?.id || '';
       }
 
       setActiveFamilyId(targetFamilyId);
       if (typeof window !== 'undefined') {
-        localStorage.setItem('softly_active_family_id', targetFamilyId);
+        if (targetFamilyId) {
+          localStorage.setItem('softly_active_family_id', targetFamilyId);
+        } else {
+          localStorage.removeItem('softly_active_family_id');
+        }
+      }
+
+      // If user has no family spaces yet and hasn't chosen demo, stop here
+      if (!targetFamilyId) {
+        setMembers([]);
+        setMedications([]);
+        setLogs([]);
+        setAppointments([]);
+        setTasks([]);
+        setPayments([]);
+        return;
       }
 
       // 2. Fetch this specific family's details, members, meds, logs, appointments, tasks, payments
@@ -274,7 +295,17 @@ function CaregiverDashboardContent() {
     setIsPayModalOpen(true);
   };
 
-  const activeFamily = families.find((f) => f.id === activeFamilyId) || families[0] || null;
+  const activeFamily =
+    families.find((f) => f.id === activeFamilyId) ||
+    (activeFamilyId === 'fam-sharma'
+      ? {
+          id: 'fam-sharma',
+          name: 'Sharma Family (Demo)',
+          invite_code: 'CARE-7892',
+          created_at: new Date('2026-09-01').toISOString(),
+          subscription_status: 'trial' as const,
+        }
+      : null);
 
   // Person-focused space state
   const [selectedMemberId, setSelectedMemberId] = useState<string>('');
@@ -464,8 +495,45 @@ function CaregiverDashboardContent() {
           </div>
         </section>
 
-        {/* Banner with Registration Shortcut & Trial Status */}
-        <div className="bg-white/80 border border-stone-200/80 rounded-3xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-soft">
+        {!activeFamily ? (
+          <div className="bg-white/95 backdrop-blur-sm border-2 border-dashed border-[#FFB7B2]/70 rounded-3xl p-8 sm:p-12 text-center shadow-soft space-y-6">
+            <div className="w-16 h-16 rounded-full bg-[#FFF0EE] border border-[#FFB7B2]/50 flex items-center justify-center text-3xl mx-auto shadow-xs">
+              🏡
+            </div>
+            <div className="max-w-lg mx-auto space-y-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#C94D48] bg-[#FFE4E1] px-3 py-1 rounded-full border border-[#FFB7B2]/40">
+                Private Account Space
+              </span>
+              <h3 className="text-xl sm:text-2xl font-bold text-stone-900 tracking-tight pt-1">
+                You haven&apos;t created a family space yet
+              </h3>
+              <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
+                Your account is private and individual. Once you register your family, you will be able to track your parents&apos; daily medications, schedule appointments, and coordinate with your local helper.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+              <Link
+                href="/register"
+                className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-softly-coral hover:bg-[#ffa8a2] active:scale-98 text-softly-text font-bold text-sm shadow-soft transition-all duration-200 flex items-center justify-center gap-2 group"
+              >
+                <Plus className="w-4 h-4 text-stone-800" />
+                <span>+ Register Your Family Space</span>
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </Link>
+              <button
+                type="button"
+                onClick={() => fetchAllData('fam-sharma')}
+                className="w-full sm:w-auto px-6 py-3.5 rounded-full bg-white hover:bg-stone-50 active:scale-98 text-stone-700 font-semibold text-sm border border-stone-200 shadow-soft transition-all flex items-center justify-center gap-2"
+              >
+                <span>🌟</span>
+                <span>Preview Sharma Family (Demo)</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Banner with Registration Shortcut & Trial Status */}
+            <div className="bg-white/80 border border-stone-200/80 rounded-3xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-soft">
           <div className="flex items-center gap-2.5">
             <span className="w-8 h-8 rounded-full bg-softly-coral/40 flex items-center justify-center text-sm">
               🏡
@@ -973,6 +1041,8 @@ function CaregiverDashboardContent() {
               </div>
             )}
           </section>
+        )}
+          </>
         )}
       </main>
 

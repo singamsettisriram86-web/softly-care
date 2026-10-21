@@ -7,6 +7,8 @@ export interface Family {
   name: string;
   invite_code: string;
   created_at: string;
+  user_id?: string;
+  owner_email?: string;
   trial_ends_at?: string;
   subscription_status?: SubscriptionStatus;
   subscription_plan?: 'monthly_299' | 'yearly_2499' | null;
