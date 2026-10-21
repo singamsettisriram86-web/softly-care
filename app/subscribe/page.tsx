@@ -35,6 +35,7 @@ function SubscribeContent() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [success, setSuccess] = useState(false);
+  const [customerPhone, setCustomerPhone] = useState('');
 
   // Load Cashfree JS SDK v3 and check auth + family
   useEffect(() => {
@@ -83,9 +84,15 @@ function SubscribeContent() {
       return;
     }
 
-    // Step 2: Authenticated but no family space yet — proceed to Cashfree anyway (family can be registered later)
+    // Step 2: Validate customer phone number
+    const cleanPhone = customerPhone.replace(/\D/g, '').slice(-10);
+    if (!cleanPhone || cleanPhone.length !== 10) {
+      setErrorMsg('Please enter your 10-digit mobile number below so Cashfree can load your payment options.');
+      setLoading(false);
+      return;
+    }
 
-    // Step 3: Authenticated + has family → proceed to Cashfree
+    // Step 3: Authenticated → proceed to Cashfree
     try {
       const res = await fetch('/api/subscriptions/create-order', {
         method: 'POST',
@@ -93,6 +100,7 @@ function SubscribeContent() {
         body: JSON.stringify({
           familyId,
           plan: selectedPlan,
+          phone: cleanPhone,
         }),
       });
 
@@ -358,8 +366,34 @@ function SubscribeContent() {
               </div>
             </div>
 
+            {/* Customer Phone Input for UPI & Receipt */}
+            <div className="max-w-md mx-auto text-left bg-white p-4 sm:p-5 rounded-3xl border border-stone-200/90 shadow-2xs space-y-2">
+              <label className="block text-xs font-bold text-stone-800 flex items-center justify-between">
+                <span>Your Mobile Number for Payment & Receipt</span>
+                <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-100">
+                  Secured · No Spam
+                </span>
+              </label>
+              <div className="flex items-center gap-2">
+                <div className="px-3.5 py-2.5 rounded-2xl bg-stone-100 text-xs font-bold text-stone-700 border border-stone-200 shrink-0">
+                  🇮🇳 +91
+                </div>
+                <input
+                  type="tel"
+                  maxLength={10}
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  placeholder="Enter your 10-digit mobile number"
+                  className="flex-1 px-3.5 py-2.5 rounded-2xl border border-stone-200 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-stone-900 bg-[#FDFCF8] text-stone-900 placeholder:text-stone-400"
+                />
+              </div>
+              <p className="text-[11px] text-stone-500 leading-relaxed">
+                Cashfree will safely link your registered Google Pay, PhonePe, or Paytm account for this number.
+              </p>
+            </div>
+
             {/* Main Action Checkout CTA */}
-            <div className="text-center max-w-md mx-auto pt-4">
+            <div className="text-center max-w-md mx-auto pt-2">
               <button
                 type="button"
                 onClick={handleCheckout}

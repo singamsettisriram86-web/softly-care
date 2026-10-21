@@ -4,7 +4,7 @@ import { memoryDataRepository } from '@/lib/data-repository';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { familyId, plan = 'monthly_299' } = body;
+    const { familyId, plan = 'monthly_299', phone: inputPhone } = body;
 
     const amount = plan === 'yearly_2499' ? 2499 : 299;
     const planName = plan === 'yearly_2499' ? 'Softly Care Premium (1 Year)' : 'Softly Care Premium (1 Month)';
@@ -16,10 +16,19 @@ export async function POST(req: NextRequest) {
 
     let customerId: string;
     let customerName: string;
-    let customerPhone: string;
+    let customerPhone = '';
     let customerEmail: string;
     let orderId: string;
     let returnUrl: string;
+
+    // Check user cookie first
+    const softlyUserCookie = req.cookies.get('softly_user')?.value;
+    let loggedInUser: { id?: string; name?: string; email?: string } | null = null;
+    if (softlyUserCookie) {
+      try {
+        loggedInUser = JSON.parse(softlyUserCookie);
+      } catch {}
+    }
 
     if (familyId) {
       // Family-linked subscription
@@ -32,38 +41,38 @@ export async function POST(req: NextRequest) {
       const caregiver = members.find((m) => m.role === 'caregiver');
 
       customerId = (caregiver?.id || familyId).replace(/[^a-zA-Z0-9_-]/g, '_');
-      customerPhone = (caregiver?.phone || '+919999999999').replace(/[^0-9]/g, '').slice(-10) || '9999999999';
-      customerName = caregiver?.name || 'Caregiver';
-      customerEmail = 'caregiver@softlycare.in';
+      customerName = caregiver?.name || loggedInUser?.name || 'Softly Member';
+      customerEmail = loggedInUser?.email || 'caregiver@softlycare.in';
+
+      const candidatePhone = (inputPhone || caregiver?.phone || '').replace(/[^0-9]/g, '').slice(-10);
+      if (candidatePhone && candidatePhone.length === 10) {
+        customerPhone = candidatePhone;
+      }
+
       orderId = `sub_${familyId}_${Date.now()}`;
       returnUrl = `${req.nextUrl.origin}/dashboard?familyId=${familyId}&sub_status=success&order_id={order_id}`;
     } else {
       // User-level subscription (no family yet — pay first, link family later)
-      // Read auth from cookie
-      const authCookie = req.cookies.get('softly_auth')?.value || req.cookies.get('auth_token')?.value || '';
-      let userId = `user_${Date.now()}`;
-      let userName = 'Softly User';
-      let userEmail = '';
+      const userId = loggedInUser?.id || `user_${Date.now()}`;
+      customerId = userId.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 50);
+      customerName = loggedInUser?.name || 'Softly Member';
+      customerEmail = loggedInUser?.email || 'user@softlycare.in';
 
-      if (authCookie) {
-        try {
-          // Try to decode the auth cookie (it may be base64 JSON or JWT-like)
-          const decoded = Buffer.from(authCookie, 'base64').toString('utf-8');
-          const parsed = JSON.parse(decoded);
-          userId = parsed.id || parsed.userId || userId;
-          userName = parsed.name || userName;
-          userEmail = parsed.email || '';
-        } catch {
-          // Cookie not base64 JSON - use defaults
-        }
+      const candidatePhone = (inputPhone || '').replace(/[^0-9]/g, '').slice(-10);
+      if (candidatePhone && candidatePhone.length === 10) {
+        customerPhone = candidatePhone;
       }
 
-      customerId = userId.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 50);
-      customerName = userName;
-      customerPhone = '9999999999';
-      customerEmail = userEmail || 'user@softlycare.in';
       orderId = `sub_user_${customerId}_${Date.now()}`;
       returnUrl = `${req.nextUrl.origin}/subscribe?pay_done=1&order_id={order_id}`;
+    }
+
+    // Strict validation: Require a valid 10-digit phone number so Cashfree displays the customer's actual number
+    if (!customerPhone || customerPhone.length !== 10 || /^(\d)\1{9}$/.test(customerPhone)) {
+      return NextResponse.json({
+        success: false,
+        error: 'Please enter a valid 10-digit mobile number so Cashfree can load your UPI apps.',
+      }, { status: 400 });
     }
 
     const orderPayload = {
