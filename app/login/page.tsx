@@ -93,6 +93,9 @@ function LoginContent() {
       });
       const data = await res.json();
       if (data.success) {
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('softly_marketplace_helper_id');
+        }
         router.push(nextPath);
       }
     } finally {
@@ -119,6 +122,9 @@ function LoginContent() {
       });
       const data = await res.json();
       if (data.success) {
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('softly_marketplace_helper_id');
+        }
         router.push(nextPath);
       } else {
         setFormError(data.error || 'Something went wrong. Please try again.');

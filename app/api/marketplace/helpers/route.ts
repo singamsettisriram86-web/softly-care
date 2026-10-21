@@ -5,6 +5,33 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
+    const check = searchParams.get('check');
+
+    // Check if the current authenticated user has their own caregiver profile
+    if (check === 'mine') {
+      let user: { id?: string; email?: string } | null = null;
+      try {
+        const userCookie = req.cookies.get('softly_user')?.value;
+        if (userCookie) {
+          user = JSON.parse(userCookie);
+        }
+      } catch { /* ignore */ }
+
+      if (!user) {
+        return NextResponse.json({ success: true, helper: null, hasProfile: false });
+      }
+
+      let helper = user.id ? await memoryDataRepository.getMarketplaceHelperByUserId(user.id) : undefined;
+      if (!helper && user.email) {
+        helper = await memoryDataRepository.getMarketplaceHelperByUserId(user.email);
+      }
+
+      return NextResponse.json({
+        success: true,
+        helper: helper || null,
+        hasProfile: !!helper,
+      });
+    }
 
     if (id) {
       const helper = await memoryDataRepository.getMarketplaceHelperById(id);
@@ -64,7 +91,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    let user: { id?: string; email?: string } | null = null;
+    try {
+      const userCookie = req.cookies.get('softly_user')?.value;
+      if (userCookie) {
+        user = JSON.parse(userCookie);
+      }
+    } catch { /* ignore */ }
+
     const newHelper = await memoryDataRepository.createMarketplaceHelper({
+      user_id: user?.id || user?.email || undefined,
       name: name.trim(),
       phone: phone.trim(),
       whatsapp: (whatsapp || phone).trim(),

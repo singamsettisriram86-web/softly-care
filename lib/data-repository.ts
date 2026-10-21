@@ -796,6 +796,17 @@ export class MemoryDataRepository {
     return undefined;
   }
 
+  async getMarketplaceHelperByUserId(userId: string): Promise<HelperMarketplaceProfile | undefined> {
+    if (this.isSupabaseEnabled()) {
+      try {
+        return await supabaseDataRepository.getMarketplaceHelperByUserId(userId);
+      } catch (e) {
+        console.warn('[DataRepository] getMarketplaceHelperByUserId error:', e);
+      }
+    }
+    return undefined;
+  }
+
   async createMarketplaceHelper(
     profile: Omit<HelperMarketplaceProfile, 'id' | 'created_at' | 'updated_at'>
   ): Promise<HelperMarketplaceProfile> {

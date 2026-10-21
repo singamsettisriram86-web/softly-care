@@ -9,6 +9,7 @@ import {
   Phone,
   MessageSquare,
   ArrowLeft,
+  ArrowRight,
   RefreshCw,
   CheckCircle,
   Clock,
@@ -18,6 +19,8 @@ import {
   ToggleRight,
   Edit3,
   Trash2,
+  Search,
+  UserPlus,
 } from 'lucide-react';
 import { HelperMarketplaceProfile, HelperLead } from '@/lib/types';
 import FloatingNav from '@/components/landing/FloatingNav';
@@ -38,7 +41,7 @@ export default function HelperProfileDashboard() {
   const [toastMsg, setToastMsg] = useState('');
   const [deletedNotice, setDeletedNotice] = useState(false);
 
-  const loadHelper = async (id: string) => {
+  const loadHelper = async (id: string): Promise<boolean> => {
     setLoading(true);
     try {
       const res = await fetch(`/api/marketplace/helpers?id=${id}`);
@@ -52,26 +55,73 @@ export default function HelperProfileDashboard() {
         if (leadsData.success) {
           setLeads(leadsData.leads || []);
         }
+        return true;
       }
+      return false;
     } catch (e) {
       console.error('Failed to load helper profile:', e);
+      return false;
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    // Check URL or localStorage
-    const params = new URLSearchParams(window.location.search);
-    const idFromUrl = params.get('id');
-    const storedId = typeof window !== 'undefined' ? localStorage.getItem('softly_marketplace_helper_id') : null;
+    const initProfile = async () => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const idFromUrl = params.get('id');
 
-    const targetId = idFromUrl || storedId || 'hlp-101'; // Fallback to first sample helper for demo
-    if (targetId) {
-      loadHelper(targetId);
-    } else {
-      setLoading(false);
-    }
+        // 1. If explicit ?id= is given in the URL, load it
+        if (idFromUrl) {
+          await loadHelper(idFromUrl);
+          return;
+        }
+
+        // 2. Check if the currently logged-in user has their own caregiver profile
+        try {
+          const mineRes = await fetch('/api/marketplace/helpers?check=mine');
+          const mineData = await mineRes.json();
+          if (mineData.success && mineData.helper) {
+            setHelper(mineData.helper);
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('softly_marketplace_helper_id', mineData.helper.id);
+            }
+            const leadsRes = await fetch(`/api/marketplace/leads?helperId=${mineData.helper.id}`);
+            const leadsData = await leadsRes.json();
+            if (leadsData.success) {
+              setLeads(leadsData.leads || []);
+            }
+            setLoading(false);
+            return;
+          }
+        } catch {
+          // Proceed to next fallback
+        }
+
+        // 3. Check if an ID was previously registered in this browser session
+        const storedId = typeof window !== 'undefined' ? localStorage.getItem('softly_marketplace_helper_id') : null;
+        if (storedId) {
+          const loaded = await loadHelper(storedId);
+          if (loaded) return;
+          // Stale ID, clear it
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('softly_marketplace_helper_id');
+          }
+        }
+
+        // 4. No profile found for this user/session -> show empty state (NO hardcoded demo fallback!)
+        setHelper(null);
+      } catch (err) {
+        console.error('Error initializing helper profile:', err);
+        setHelper(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initProfile();
   }, []);
 
   const handleToggleAvailability = async () => {
@@ -178,42 +228,69 @@ export default function HelperProfileDashboard() {
             </div>
           </div>
         ) : !helper ? (
-          <div className="bg-white rounded-3xl p-8 border border-stone-200 text-center max-w-md mx-auto space-y-4">
-            <div className="w-12 h-12 rounded-full bg-stone-100 flex items-center justify-center text-xl mx-auto">
-              📱
+          <div className="bg-white rounded-3xl p-8 sm:p-10 border border-stone-200 text-center max-w-lg mx-auto space-y-6 shadow-xs animate-in fade-in zoom-in-95">
+            <div className="w-16 h-16 rounded-3xl bg-amber-50 text-amber-600 flex items-center justify-center text-3xl mx-auto border border-amber-100 shadow-2xs">
+              🩺
             </div>
-            <h2 className="text-xl font-bold text-stone-900">Manage Your Helper Profile</h2>
-            <p className="text-xs text-stone-500">
-              Enter your registered mobile number to access your helper dashboard and toggle availability.
-            </p>
 
-            {lookupError && (
-              <div className="p-3 bg-red-50 text-red-700 text-xs rounded-2xl border border-red-200">
-                {lookupError}
-              </div>
-            )}
+            <div className="space-y-2">
+              <span className="text-[11px] font-bold text-amber-700 bg-amber-100/70 px-2.5 py-1 rounded-full uppercase tracking-wider inline-block">
+                Caregiver Work Portal
+              </span>
+              <h2 className="text-xl sm:text-2xl font-bold text-stone-900 mt-2">
+                No Caregiver Profile Registered Yet
+              </h2>
+              <p className="text-xs sm:text-sm text-stone-500 max-w-md mx-auto leading-relaxed">
+                You haven&apos;t created a public caregiver profile on this account yet. If you are an elder caregiver, nursing attendant, or cook looking for jobs, register your profile to get direct family inquiries with zero commission.
+              </p>
+            </div>
 
-            <form onSubmit={handlePhoneLookup} className="space-y-3">
-              <input
-                type="tel"
-                placeholder="Enter 10-digit mobile number"
-                value={lookupPhone}
-                onChange={(e) => setLookupPhone(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-2xl bg-stone-50 border border-stone-200 text-xs text-stone-800 outline-none focus:ring-2 focus:ring-[#FFB7B2]/70"
-              />
-              <button
-                type="submit"
-                className="w-full py-2.5 rounded-full font-bold text-xs"
-                style={{ background: '#FFB7B2', color: '#292524' }}
+            {/* Primary Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+              <Link
+                href="/helpers/register"
+                className="px-6 py-3 rounded-full bg-softly-text hover:bg-stone-800 text-white font-bold text-xs shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2"
               >
-                Find My Profile
-              </button>
-            </form>
-
-            <div className="pt-2">
-              <Link href="/helpers/register" className="text-xs font-bold text-softly-coral hover:underline">
-                New here? Register as a Caregiver →
+                <span>📝 Register as a Helper</span>
+                <ArrowRight className="w-4 h-4" />
               </Link>
+              <Link
+                href="/helpers/browse"
+                className="px-6 py-3 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs transition-colors flex items-center justify-center gap-1.5"
+              >
+                <Search className="w-3.5 h-3.5 text-stone-500" />
+                <span>Browse Caregivers</span>
+              </Link>
+            </div>
+
+            {/* Phone Lookup for Existing Helpers */}
+            <div className="pt-6 border-t border-stone-100 space-y-3">
+              <p className="text-xs font-semibold text-stone-600">
+                Already registered previously with a mobile number?
+              </p>
+
+              {lookupError && (
+                <div className="p-3 bg-red-50 text-red-700 text-xs rounded-2xl border border-red-200 text-center">
+                  {lookupError}
+                </div>
+              )}
+
+              <form onSubmit={handlePhoneLookup} className="flex gap-2 max-w-sm mx-auto">
+                <input
+                  type="tel"
+                  placeholder="Enter 10-digit mobile number"
+                  value={lookupPhone}
+                  onChange={(e) => setLookupPhone(e.target.value)}
+                  className="flex-1 px-3.5 py-2.5 rounded-2xl bg-stone-50 border border-stone-200 text-xs text-stone-800 outline-none focus:ring-2 focus:ring-[#FFB7B2]/70"
+                />
+                <button
+                  type="submit"
+                  className="px-4 py-2.5 rounded-2xl font-bold text-xs whitespace-nowrap transition-transform active:scale-95 shadow-2xs"
+                  style={{ background: '#FFB7B2', color: '#292524' }}
+                >
+                  Look Up
+                </button>
+              </form>
             </div>
           </div>
         ) : (

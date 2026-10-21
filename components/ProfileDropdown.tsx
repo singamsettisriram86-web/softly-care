@@ -61,6 +61,7 @@ export default function ProfileDropdown({ variant = 'nav' }: Props) {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('softly_user');
         localStorage.removeItem('softly_active_family_id');
+        localStorage.removeItem('softly_marketplace_helper_id');
       }
       router.push('/');
       router.refresh();

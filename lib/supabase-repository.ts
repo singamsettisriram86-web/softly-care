@@ -551,6 +551,20 @@ export class SupabaseDataRepository {
     return data as HelperMarketplaceProfile;
   }
 
+  async getMarketplaceHelperByUserId(userId: string): Promise<HelperMarketplaceProfile | undefined> {
+    if (!userId) return undefined;
+    const { data, error } = await supabase
+      .from('helper_marketplace_profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error || !data) return undefined;
+    return data as HelperMarketplaceProfile;
+  }
+
   async createMarketplaceHelper(
     profile: Omit<HelperMarketplaceProfile, 'id' | 'created_at' | 'updated_at'>
   ): Promise<HelperMarketplaceProfile> {
@@ -558,6 +572,7 @@ export class SupabaseDataRepository {
     const newHelper: HelperMarketplaceProfile = {
       ...profile,
       id,
+      user_id: profile.user_id,
       is_verified: true,
       is_available: profile.is_available !== undefined ? profile.is_available : true,
       availability_note: profile.availability_note || 'Available immediately',
