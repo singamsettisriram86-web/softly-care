@@ -95,8 +95,13 @@ function LoginContent() {
       if (data.success) {
         if (typeof window !== 'undefined') {
           localStorage.removeItem('softly_marketplace_helper_id');
+          if (tab === 'signup') {
+            localStorage.setItem('softly_first_time_signup', 'true');
+            localStorage.removeItem('softly_first_time_popup_seen');
+          }
         }
-        router.push(nextPath);
+        const destination = tab === 'signup' && nextPath === '/dashboard' ? '/dashboard?welcome=1' : nextPath;
+        router.push(destination);
       }
     } finally {
       setGoogleLoading(false);
@@ -124,8 +129,13 @@ function LoginContent() {
       if (data.success) {
         if (typeof window !== 'undefined') {
           localStorage.removeItem('softly_marketplace_helper_id');
+          if (tab === 'signup') {
+            localStorage.setItem('softly_first_time_signup', 'true');
+            localStorage.removeItem('softly_first_time_popup_seen');
+          }
         }
-        router.push(nextPath);
+        const destination = tab === 'signup' && nextPath === '/dashboard' ? '/dashboard?welcome=1' : nextPath;
+        router.push(destination);
       } else {
         setFormError(data.error || 'Something went wrong. Please try again.');
       }

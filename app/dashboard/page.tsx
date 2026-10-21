@@ -16,6 +16,7 @@ import CashfreePayModal from '@/components/dashboard/CashfreePayModal';
 import SubscriptionUpgradeModal from '@/components/dashboard/SubscriptionUpgradeModal';
 import WhatsAppSimulatorDrawer from '@/components/dashboard/WhatsAppSimulatorDrawer';
 import RegisterFamilyModal from '@/components/RegisterFamilyModal';
+import FirstTimeChoiceModal from '@/components/dashboard/FirstTimeChoiceModal';
 import Link from 'next/link';
 import { Plus, Pill, Calendar, HeartHandshake, UserPlus, Pencil, Sparkles, ArrowRight, Search, Briefcase } from 'lucide-react';
 
@@ -61,6 +62,7 @@ function CaregiverDashboardContent() {
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [isSimulatorOpen, setIsSimulatorOpen] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  const [isChoiceModalOpen, setIsChoiceModalOpen] = useState(false);
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<FamilyMember | null>(null);
   const [payHelperName, setPayHelperName] = useState('Local Helper');
@@ -160,6 +162,37 @@ function CaregiverDashboardContent() {
       fetchAllData();
     }
   }, [queryFamilyId]);
+
+  // First-time registered user onboarding popup plate check
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const isWelcomeParam = searchParams.get('welcome') === '1' || searchParams.get('welcome') === 'true';
+      const isNewSignup = localStorage.getItem('softly_first_time_signup') === 'true';
+      const hasSeen = localStorage.getItem('softly_first_time_popup_seen');
+
+      // Trigger if ?welcome=1, or newly registered and not yet dismissed
+      if (isWelcomeParam || (isNewSignup && !hasSeen) || (!hasSeen && !activeFamilyId && !queryFamilyId)) {
+        setIsChoiceModalOpen(true);
+      }
+    }
+  }, [searchParams, activeFamilyId, queryFamilyId]);
+
+  const handleCloseChoiceModal = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('softly_first_time_popup_seen', 'true');
+      localStorage.removeItem('softly_first_time_signup');
+    }
+    setIsChoiceModalOpen(false);
+  };
+
+  const handleSelectChoice = (path: string) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('softly_first_time_popup_seen', 'true');
+      localStorage.removeItem('softly_first_time_signup');
+    }
+    setIsChoiceModalOpen(false);
+    router.push(path);
+  };
 
   const handleSelectFamily = (id: string) => {
     setActiveFamilyId(id);
@@ -1122,6 +1155,13 @@ function CaregiverDashboardContent() {
         familyId={activeFamily?.id || ''}
         parentName={(parentMembers[0]?.name || activeFamily?.name || 'Parent').replace(/\s*\(.*?\)\s*$/, '').trim()}
         parentPhone={parentMembers[0]?.phone || ''}
+      />
+
+      {/* First-time Onboarding Choice Popup Plate */}
+      <FirstTimeChoiceModal
+        isOpen={isChoiceModalOpen}
+        onClose={handleCloseChoiceModal}
+        onSelect={handleSelectChoice}
       />
     </div>
   );
