@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Check,
   ShieldCheck,
@@ -18,6 +18,7 @@ import {
   UserCheck,
 } from 'lucide-react';
 import FloatingNav from '@/components/landing/FloatingNav';
+import Footer from '@/components/Footer';
 
 declare global {
   interface Window {
@@ -25,15 +26,17 @@ declare global {
   }
 }
 
-export default function SubscribePage() {
+function SubscribeContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [selectedPlan, setSelectedPlan] = useState<'monthly_299' | 'yearly_2499'>('yearly_2499');
   const [loading, setLoading] = useState(false);
   const [familyId, setFamilyId] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [success, setSuccess] = useState(false);
 
-  // Load Cashfree JS SDK v3
+  // Load Cashfree JS SDK v3 and check auth + family
   useEffect(() => {
     if (typeof window !== 'undefined' && !document.getElementById('cashfree-js')) {
       const script = document.createElement('script');
@@ -43,30 +46,46 @@ export default function SubscribePage() {
       document.body.appendChild(script);
     }
 
-    // Check if user has an existing family
     (async () => {
       try {
-        const res = await fetch('/api/families?check=mine');
-        const data = await res.json();
-        if (data.hasFamily && data.family) {
-          setFamilyId(data.family.id);
+        const [meRes, familyRes] = await Promise.all([
+          fetch('/api/auth/me'),
+          fetch('/api/families?check=mine'),
+        ]);
+        const meData = await meRes.json();
+        const familyData = await familyRes.json();
+        setIsAuthenticated(!!meData.authenticated);
+        if (familyData.hasFamily && familyData.family) {
+          setFamilyId(familyData.family.id);
         }
       } catch (e) {
-        // Guest user
+        setIsAuthenticated(false);
       }
     })();
   }, []);
+
+  // Auto-trigger payment when returning from auth with ?pay=1
+  useEffect(() => {
+    if (searchParams.get('pay') === '1' && isAuthenticated) {
+      handleCheckout();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [familyId, isAuthenticated]);
 
   const handleCheckout = async () => {
     setLoading(true);
     setErrorMsg('');
 
-    // If user has not created a family yet, redirect to register with next step
-    if (!familyId) {
-      router.push('/login?next=/register');
+    // Step 1: Check if authenticated
+    if (!isAuthenticated) {
+      router.push('/login?next=/subscribe&tab=signup');
+      setLoading(false);
       return;
     }
 
+    // Step 2: Authenticated but no family space yet — proceed to Cashfree anyway (family can be registered later)
+
+    // Step 3: Authenticated + has family → proceed to Cashfree
     try {
       const res = await fetch('/api/subscriptions/create-order', {
         method: 'POST',
@@ -82,10 +101,21 @@ export default function SubscribePage() {
         throw new Error(data.error || 'Failed to initiate subscription order');
       }
 
-      // Initialize Cashfree Dropin SDK v3
-      if (typeof window.Cashfree !== 'undefined') {
-        const cashfree = window.Cashfree({
-          mode: 'production',
+      // Ensure Cashfree Dropin SDK v3 is loaded
+      let cashfreeSdk = window.Cashfree;
+      if (!cashfreeSdk) {
+        for (let i = 0; i < 20; i++) {
+          await new Promise((r) => setTimeout(r, 100));
+          if (window.Cashfree) {
+            cashfreeSdk = window.Cashfree;
+            break;
+          }
+        }
+      }
+
+      if (cashfreeSdk) {
+        const cashfree = cashfreeSdk({
+          mode: data.isProduction ? 'production' : 'sandbox',
         });
 
         cashfree.checkout({
@@ -120,8 +150,7 @@ export default function SubscribePage() {
           }
         });
       } else {
-        // Fallback demo simulation
-        setSuccess(true);
+        setErrorMsg('Payment gateway is still loading. Please tap Subscribe once more.');
         setLoading(false);
       }
     } catch (err: any) {
@@ -175,15 +204,23 @@ export default function SubscribePage() {
             <p className="text-xs text-stone-600 leading-relaxed">
               Your family subscription is now active. All automated WhatsApp medication reminders and calendar features are unlocked.
             </p>
-            <div className="pt-2">
+            <div className="pt-2 flex flex-col sm:flex-row gap-2.5 justify-center">
               <Link
                 href="/dashboard"
-                className="px-6 py-3 rounded-full font-bold text-xs text-stone-900 shadow-soft transition-transform active:scale-95 inline-flex items-center gap-2"
+                className="px-6 py-3 rounded-full font-bold text-xs text-stone-900 shadow-soft transition-transform active:scale-95 inline-flex items-center justify-center gap-2"
                 style={{ background: '#FFB7B2' }}
               >
-                <span>Go to Family Dashboard</span>
+                <span>Go to Dashboard</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
+              {!familyId && (
+                <Link
+                  href="/register"
+                  className="px-6 py-3 rounded-full font-bold text-xs text-stone-800 border border-stone-300 hover:bg-stone-50 transition-transform active:scale-95 inline-flex items-center justify-center gap-1.5"
+                >
+                  <span>Register Family Space</span>
+                </Link>
+              )}
             </div>
           </div>
         ) : (
@@ -356,6 +393,20 @@ export default function SubscribePage() {
           </div>
         )}
       </main>
+
+      <Footer />
     </div>
+  );
+}
+
+export default function SubscribePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#FDFCF8' }}>
+        <div className="w-8 h-8 rounded-full animate-ping" style={{ background: '#FFB7B2' }} />
+      </div>
+    }>
+      <SubscribeContent />
+    </Suspense>
   );
 }

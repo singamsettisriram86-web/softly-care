@@ -202,7 +202,7 @@ export class SupabaseDataRepository {
     const inviteCode = `CARE-${codeNum}`;
 
     const createdAt = new Date();
-    const trialEndsAt = new Date(createdAt.getTime() + 3 * 24 * 60 * 60 * 1000);
+    const trialEndsAt = new Date(createdAt.getTime() + 14 * 24 * 60 * 60 * 1000);
 
     const newFamily: Family = {
       id: familyId,

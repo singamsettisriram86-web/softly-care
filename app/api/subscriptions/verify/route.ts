@@ -6,8 +6,8 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { orderId, familyId, plan = 'monthly_299' } = body;
 
-    if (!orderId || !familyId) {
-      return NextResponse.json({ success: false, error: 'orderId and familyId are required' }, { status: 400 });
+    if (!orderId) {
+      return NextResponse.json({ success: false, error: 'orderId is required' }, { status: 400 });
     }
 
     const appId = process.env.CASHFREE_APP_ID || '';
@@ -31,13 +31,15 @@ export async function POST(req: NextRequest) {
     }
 
     if (data.order_status === 'PAID') {
-      await memoryDataRepository.updateFamilySubscription(familyId, {
-        subscription_status: 'active',
-        subscription_plan: plan,
-        subscription_id: orderId,
-        whatsapp_quota_used: 0,
-        whatsapp_quota_limit: 150,
-      });
+      if (familyId) {
+        await memoryDataRepository.updateFamilySubscription(familyId, {
+          subscription_status: 'active',
+          subscription_plan: plan,
+          subscription_id: orderId,
+          whatsapp_quota_used: 0,
+          whatsapp_quota_limit: 150,
+        });
+      }
 
       return NextResponse.json({
         success: true,

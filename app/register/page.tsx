@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Sparkles, ArrowRight, Plus, X } from 'lucide-react';
+import PostRegistrationTrialModal from '@/components/dashboard/PostRegistrationTrialModal';
 
 const RELATION_OPTIONS = ['Father', 'Mother', 'Brother', 'Sister', 'Grandfather', 'Grandmother', 'Others'];
 
@@ -14,8 +15,9 @@ interface CareMember {
 
 const emptyMember = (): CareMember => ({ relation: 'Father', name: '', city: '' });
 
-export default function RegisterPage() {
+function RegisterContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [caregiverName, setCaregiverName] = useState('');
   const [caregiverCity, setCaregiverCity] = useState('');
@@ -32,6 +34,7 @@ export default function RegisterPage() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [createdFamily, setCreatedFamily] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -91,7 +94,16 @@ export default function RegisterPage() {
       if (typeof window !== 'undefined') {
         localStorage.setItem('softly_active_family_id', data.family.id);
       }
-      router.push(`/dashboard?familyId=${data.family.id}`);
+      const nextDest = searchParams.get('next');
+      if (nextDest === '/subscribe') {
+        router.push('/subscribe?pay=1');
+      } else {
+        // Show the 14-day trial & subscription option modal
+        setCreatedFamily({
+          id: data.family.id,
+          name: data.family.name || calculatedFamilyName,
+        });
+      }
     } catch (err: any) {
       setError(err.message || 'Something went wrong. Please try again.');
     } finally {
@@ -303,6 +315,38 @@ export default function RegisterPage() {
           </div>
         </form>
       </div>
+
+      {/* Post-Registration Subscription & Trial Choice Modal */}
+      <PostRegistrationTrialModal
+        isOpen={!!createdFamily}
+        familyName={createdFamily?.name || ''}
+        onProceedToPlans={() => {
+          if (createdFamily?.id) {
+            router.push(`/subscribe?familyId=${createdFamily.id}`);
+          } else {
+            router.push('/subscribe');
+          }
+        }}
+        onContinueTrial={() => {
+          if (createdFamily?.id) {
+            router.push(`/dashboard?familyId=${createdFamily.id}&welcome=1`);
+          } else {
+            router.push('/dashboard?welcome=1');
+          }
+        }}
+      />
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#FDFCF8' }}>
+        <div className="w-8 h-8 rounded-full animate-ping" style={{ background: '#FFB7B2' }} />
+      </div>
+    }>
+      <RegisterContent />
+    </Suspense>
   );
 }

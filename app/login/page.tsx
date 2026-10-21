@@ -42,7 +42,7 @@ function LoginContent() {
   const queryTab = searchParams.get('tab');
 
   const [tab, setTab] = useState<'signin' | 'signup'>(
-    queryTab === 'signup' || nextPath === '/register' || nextPath.includes('/helpers/register') || nextPath.includes('/helpers/browse')
+    queryTab === 'signup' || nextPath === '/register' || nextPath.startsWith('/subscribe') || nextPath.includes('/helpers/register') || nextPath.includes('/helpers/browse')
       ? 'signup'
       : 'signin'
   );
@@ -105,7 +105,9 @@ function LoginContent() {
             localStorage.removeItem('softly_first_time_popup_seen');
           }
         }
-        const destination = tab === 'signup' && nextPath === '/dashboard' ? '/dashboard?welcome=1' : nextPath;
+        const destination = nextPath === '/subscribe'
+          ? '/subscribe?pay=1'
+          : (tab === 'signup' && nextPath === '/dashboard' ? '/dashboard?welcome=1' : nextPath);
         router.push(destination);
       }
     } finally {
@@ -139,7 +141,9 @@ function LoginContent() {
             localStorage.removeItem('softly_first_time_popup_seen');
           }
         }
-        const destination = tab === 'signup' && nextPath === '/dashboard' ? '/dashboard?welcome=1' : nextPath;
+        const destination = nextPath === '/subscribe'
+          ? '/subscribe?pay=1'
+          : (tab === 'signup' && nextPath === '/dashboard' ? '/dashboard?welcome=1' : nextPath);
         router.push(destination);
       } else {
         setFormError(data.error || 'Something went wrong. Please try again.');
@@ -170,6 +174,8 @@ function LoginContent() {
           <p className="text-sm text-center leading-relaxed" style={{ color: '#78716C' }}>
             {nextPath === '/register'
               ? "Create your account first — then we'll set up your family space."
+              : nextPath.startsWith('/subscribe')
+              ? 'Sign in or create a free account to complete your Softly Premium subscription.'
               : nextPath.startsWith('/helpers/browse')
               ? 'Sign up or sign in to browse and connect with verified elder caregivers.'
               : nextPath.startsWith('/helpers/register')

@@ -17,6 +17,7 @@ import SubscriptionUpgradeModal from '@/components/dashboard/SubscriptionUpgrade
 import WhatsAppSimulatorDrawer from '@/components/dashboard/WhatsAppSimulatorDrawer';
 import RegisterFamilyModal from '@/components/RegisterFamilyModal';
 import FirstTimeChoiceModal from '@/components/dashboard/FirstTimeChoiceModal';
+import TrialExpiredPaywallModal from '@/components/dashboard/TrialExpiredPaywallModal';
 import Link from 'next/link';
 import { Plus, Pill, Calendar, HeartHandshake, UserPlus, Pencil, Sparkles, ArrowRight, Search, Briefcase } from 'lucide-react';
 
@@ -47,6 +48,30 @@ function CaregiverDashboardContent() {
     return '';
   });
 
+  const activeFamily =
+    families.find((f) => f.id === activeFamilyId) ||
+    (activeFamilyId === 'fam-sharma'
+      ? {
+          id: 'fam-sharma',
+          name: 'Sharma Family (Demo)',
+          invite_code: 'CARE-7892',
+          created_at: new Date('2026-09-01').toISOString(),
+          subscription_status: 'trial' as const,
+        }
+      : null);
+
+  const isSubscribed = activeFamily?.subscription_status === 'active';
+  const isTrialExpired = !isSubscribed && Boolean(
+    (activeFamily?.trial_ends_at && new Date(activeFamily.trial_ends_at).getTime() <= Date.now()) ||
+    (searchParams?.get('test_expired') === '1')
+  );
+
+  useEffect(() => {
+    if (isTrialExpired) {
+      setShowTrialExpiredModal(true);
+    }
+  }, [isTrialExpired]);
+
   const [medications, setMedications] = useState<Medication[]>([]);
   const [logs, setLogs] = useState<MedicationLog[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -67,6 +92,7 @@ function CaregiverDashboardContent() {
   const [editingMember, setEditingMember] = useState<FamilyMember | null>(null);
   const [payHelperName, setPayHelperName] = useState('Local Helper');
   const [payHelperUpi, setPayHelperUpi] = useState('');
+  const [showTrialExpiredModal, setShowTrialExpiredModal] = useState(false);
 
   // Active navigation tab
   const [activeTab, setActiveTab] = useState<'all' | 'medications' | 'appointments' | 'helper'>('all');
@@ -203,7 +229,35 @@ function CaregiverDashboardContent() {
   };
 
   // Handlers
+  const handleOpenAddMed = () => {
+    if (isTrialExpired) {
+      setShowTrialExpiredModal(true);
+      return;
+    }
+    setIsAddMedOpen(true);
+  };
+
+  const handleOpenAddAppt = () => {
+    if (isTrialExpired) {
+      setShowTrialExpiredModal(true);
+      return;
+    }
+    setIsAddApptOpen(true);
+  };
+
+  const handleOpenAddMember = () => {
+    if (isTrialExpired) {
+      setShowTrialExpiredModal(true);
+      return;
+    }
+    setIsAddMemberOpen(true);
+  };
+
   const handleLogTaken = async (medId: string) => {
+    if (isTrialExpired) {
+      setShowTrialExpiredModal(true);
+      return;
+    }
     try {
       const res = await fetch('/api/medications/log', {
         method: 'POST',
@@ -226,6 +280,10 @@ function CaregiverDashboardContent() {
   };
 
   const handleTriggerWhatsApp = async (med: Medication) => {
+    if (isTrialExpired) {
+      setShowTrialExpiredModal(true);
+      return;
+    }
     try {
       await fetch('/api/reminders/trigger', {
         method: 'POST',
@@ -327,18 +385,6 @@ function CaregiverDashboardContent() {
     setPayHelperUpi(upi || helperUpi);
     setIsPayModalOpen(true);
   };
-
-  const activeFamily =
-    families.find((f) => f.id === activeFamilyId) ||
-    (activeFamilyId === 'fam-sharma'
-      ? {
-          id: 'fam-sharma',
-          name: 'Sharma Family (Demo)',
-          invite_code: 'CARE-7892',
-          created_at: new Date('2026-09-01').toISOString(),
-          subscription_status: 'trial' as const,
-        }
-      : null);
 
   // Person-focused space state
   const [selectedMemberId, setSelectedMemberId] = useState<string>('');
@@ -577,20 +623,31 @@ function CaregiverDashboardContent() {
                   Viewing Space for: <span className="underline">{activeFamily?.name || 'Your Family'}</span>
                 </p>
                 {/* Subscription Status Pill */}
-                {activeFamily?.subscription_status === 'active' ? (
+                {isSubscribed ? (
                   <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
                     Premium Active
                   </span>
                 ) : (
-                  <span className="px-2.5 py-0.5 rounded-full bg-[#FFE4E1] text-[#8C3330] text-[10px] font-bold border border-[#FFB7B2]/40">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isTrialExpired) setShowTrialExpiredModal(true);
+                      else setIsUpgradeModalOpen(true);
+                    }}
+                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
+                      isTrialExpired
+                        ? 'bg-red-100 text-red-800 border border-red-300 hover:bg-red-200'
+                        : 'bg-[#FFE4E1] text-[#8C3330] border border-[#FFB7B2]/40 hover:bg-[#ffd5d1]'
+                    }`}
+                  >
                     {(() => {
-                      if (!activeFamily?.trial_ends_at) return '3-Day Free Trial';
+                      if (isTrialExpired) return 'Trial Expired · Subscribe to Unlock';
+                      if (!activeFamily?.trial_ends_at) return '14-Day Free Trial';
                       const msLeft = new Date(activeFamily.trial_ends_at).getTime() - Date.now();
-                      if (msLeft <= 0) return 'Trial Ended (WhatsApp Paused)';
                       const daysLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24));
                       return `${daysLeft} Day${daysLeft > 1 ? 's' : ''} Left in Trial`;
                     })()}
-                  </span>
+                  </button>
                 )}
               </div>
               <p className="text-[11px] text-stone-500 mt-0.5">
@@ -600,20 +657,27 @@ function CaregiverDashboardContent() {
           </div>
 
           <div className="flex items-center gap-2">
-            {activeFamily?.subscription_status !== 'active' && (
+            {!isSubscribed && (
               <button
                 type="button"
-                onClick={() => setIsUpgradeModalOpen(true)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-softly-coral hover:bg-[#ffa8a2] text-softly-text text-xs font-bold shadow-soft active:scale-95 transition-all"
+                onClick={() => {
+                  if (isTrialExpired) setShowTrialExpiredModal(true);
+                  else setIsUpgradeModalOpen(true);
+                }}
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold shadow-soft active:scale-95 transition-all ${
+                  isTrialExpired
+                    ? 'bg-red-600 hover:bg-red-700 text-white'
+                    : 'bg-softly-coral hover:bg-[#ffa8a2] text-softly-text'
+                }`}
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>Upgrade (₹299/mo)</span>
+                <span>{isTrialExpired ? 'Unlock Plan (₹299/mo)' : 'Upgrade (₹299/mo)'}</span>
               </button>
             )}
 
             <button
               type="button"
-              onClick={() => setIsAddMemberOpen(true)}
+              onClick={handleOpenAddMember}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold shadow-soft active:scale-95 transition-all"
             >
               <UserPlus className="w-3.5 h-3.5" />
@@ -621,6 +685,31 @@ function CaregiverDashboardContent() {
             </button>
           </div>
         </div>
+
+        {/* Trial Expired Warning Banner */}
+        {isTrialExpired && (
+          <div className="bg-red-50/90 border border-red-200 rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-red-950 shadow-2xs">
+            <div className="flex items-center gap-3">
+              <span className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-lg shrink-0">
+                🔒
+              </span>
+              <div>
+                <h4 className="text-xs sm:text-sm font-bold text-red-900">Your 14-Day Free Trial Has Concluded</h4>
+                <p className="text-[11px] text-red-700 mt-0.5">
+                  Proactive WhatsApp alerts and scheduling are locked. Please choose a plan to restore uninterrupted care for your parents.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowTrialExpiredModal(true)}
+              className="px-4 py-2.5 rounded-full text-xs font-bold text-stone-900 shadow-soft hover:opacity-95 transition-all shrink-0 active:scale-95"
+              style={{ background: '#FFB7B2' }}
+            >
+              Choose Plan (₹299/mo) →
+            </button>
+          </div>
+        )}
 
         {/* Care Circle & Member Space Switcher */}
         <div className="bg-white/90 backdrop-blur-sm border border-stone-200/80 rounded-3xl p-5 sm:p-6 shadow-soft space-y-5">
@@ -940,7 +1029,7 @@ function CaregiverDashboardContent() {
 
               <button
                 type="button"
-                onClick={() => setIsAddMedOpen(true)}
+                onClick={handleOpenAddMed}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-softly-coral hover:bg-[#ffa8a2] active:scale-95 text-softly-text text-xs font-semibold shadow-soft transition-all"
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -959,7 +1048,7 @@ function CaregiverDashboardContent() {
                 </p>
                 <button
                   type="button"
-                  onClick={() => setIsAddMedOpen(true)}
+                  onClick={handleOpenAddMed}
                   className="px-5 py-2.5 rounded-full bg-softly-coral text-softly-text text-xs font-bold shadow-soft hover:bg-[#ffa8a2]"
                 >
                   {selectedMember
@@ -1001,7 +1090,7 @@ function CaregiverDashboardContent() {
 
               <button
                 type="button"
-                onClick={() => setIsAddApptOpen(true)}
+                onClick={handleOpenAddAppt}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-medium transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -1014,7 +1103,7 @@ function CaregiverDashboardContent() {
                 <p className="text-stone-500 text-sm mb-3">No upcoming doctor appointments scheduled.</p>
                 <button
                   type="button"
-                  onClick={() => setIsAddApptOpen(true)}
+                  onClick={handleOpenAddAppt}
                   className="px-5 py-2.5 rounded-full bg-stone-100 text-stone-700 text-xs font-semibold hover:bg-stone-200"
                 >
                   + Schedule a Doctor Visit
@@ -1162,6 +1251,14 @@ function CaregiverDashboardContent() {
         isOpen={isChoiceModalOpen}
         onClose={handleCloseChoiceModal}
         onSelect={handleSelectChoice}
+      />
+
+      {/* 14-Day Trial Expired Paywall Gating Modal */}
+      <TrialExpiredPaywallModal
+        isOpen={showTrialExpiredModal}
+        familyId={activeFamily?.id}
+        onClose={() => setShowTrialExpiredModal(false)}
+        isDismissible={true}
       />
     </div>
   );

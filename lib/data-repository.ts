@@ -371,13 +371,20 @@ export class MemoryDataRepository {
     const codeNum = Math.floor(1000 + Math.random() * 9000);
     const inviteCode = `CARE-${codeNum}`;
 
+    const createdAt = new Date();
+    const trialEndsAt = new Date(createdAt.getTime() + 14 * 24 * 60 * 60 * 1000);
+
     const newFamily: Family = {
       id: familyId,
       name: params.familyName.trim(),
       invite_code: inviteCode,
       user_id: params.userId,
       owner_email: params.userEmail ? params.userEmail.trim().toLowerCase() : undefined,
-      created_at: new Date().toISOString(),
+      created_at: createdAt.toISOString(),
+      trial_ends_at: trialEndsAt.toISOString(),
+      subscription_status: 'trial',
+      whatsapp_quota_used: 0,
+      whatsapp_quota_limit: 150,
     };
     this.families.push(newFamily);
 

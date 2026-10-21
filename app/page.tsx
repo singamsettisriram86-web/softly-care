@@ -6,10 +6,15 @@ import AppPreviewMockup from '@/components/landing/AppPreviewMockup';
 import DiaryTestimonials from '@/components/landing/DiaryTestimonials';
 import FaqAccordion from '@/components/landing/FaqAccordion';
 import WaitlistSection from '@/components/landing/WaitlistSection';
+import Footer from '@/components/Footer';
+import VisitorTrialModal from '@/components/landing/VisitorTrialModal';
 
 export default function LandingPage() {
   return (
     <div className="relative min-h-screen bg-softly-bg text-softly-text overflow-hidden">
+      {/* 14-Day Free Trial Visitor Popup */}
+      <VisitorTrialModal />
+
       {/* Floating Pill Nav */}
       <FloatingNav />
 
@@ -34,10 +39,8 @@ export default function LandingPage() {
         <WaitlistSection />
       </main>
 
-      {/* Minimal Footer */}
-      <footer className="py-8 border-t border-stone-200/60 text-center text-xs text-stone-500">
-        <p>© 2026 Softly Care Coordinator. Designed for mindful family wellness across cities.</p>
-      </footer>
+      {/* Comprehensive Compliance Footer */}
+      <Footer />
     </div>
   );
 }
