@@ -26,20 +26,16 @@ export default function RegisterHelperPage() {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
-  const [gender, setGender] = useState<'Female' | 'Male' | 'Other'>('Female');
-  const [age, setAge] = useState<number>(38);
+  const [gender, setGender] = useState<'Female' | 'Male' | 'Other' | ''>('');
+  const [age, setAge] = useState<string>('');
   const [baseCity, setBaseCity] = useState('');
   const [serviceCitiesInput, setServiceCitiesInput] = useState('');
-  const [helperType, setHelperType] = useState<'live_in' | 'visiting' | 'both'>('live_in');
-  const [experienceYears, setExperienceYears] = useState<number>(3);
-  const [selectedSkills, setSelectedSkills] = useState<string[]>([
-    'Bedridden Patient Care',
-    'Vitals / BP Check',
-    'Mobility & Walking',
-  ]);
-  const [selectedLanguages, setSelectedLanguages] = useState<string[]>(['Telugu', 'Hindi']);
-  const [expectedSalary, setExpectedSalary] = useState('₹15,000 / month');
-  const [dailyRate, setDailyRate] = useState('₹600 / day');
+  const [helperType, setHelperType] = useState<'live_in' | 'visiting' | 'both' | ''>('');
+  const [experienceYears, setExperienceYears] = useState<string>('');
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
+  const [expectedSalary, setExpectedSalary] = useState('');
+  const [dailyRate, setDailyRate] = useState('');
   const [bio, setBio] = useState('');
   const [upiId, setUpiId] = useState('');
 
@@ -65,6 +61,16 @@ export default function RegisterHelperPage() {
       return;
     }
 
+    if (!helperType) {
+      setError('Please select a work arrangement (Live-in Care, Visiting Only, or Open to Both).');
+      return;
+    }
+
+    if (selectedSkills.length === 0) {
+      setError('Please select at least one care skill you can provide.');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
@@ -84,17 +90,17 @@ export default function RegisterHelperPage() {
           name: name.trim(),
           phone: phone.trim(),
           whatsapp: (whatsapp || phone).trim(),
-          gender,
-          age: Number(age),
+          gender: gender || 'Female',
+          age: age ? Number(age) : 35,
           base_city: baseCity.trim(),
           service_cities: serviceCities,
           helper_type: helperType,
-          experience_years: Number(experienceYears),
+          experience_years: experienceYears ? Number(experienceYears) : 0,
           skills: selectedSkills,
-          languages: selectedLanguages,
-          expected_salary: expectedSalary.trim(),
-          daily_rate: dailyRate.trim(),
-          bio: bio.trim(),
+          languages: selectedLanguages.length > 0 ? selectedLanguages : ['Telugu'],
+          expected_salary: expectedSalary.trim() || undefined,
+          daily_rate: dailyRate.trim() || undefined,
+          bio: bio.trim() || undefined,
           upi_id: upiId.trim() || undefined,
         }),
       });
@@ -165,7 +171,7 @@ export default function RegisterHelperPage() {
               <input
                 type="text"
                 required
-                placeholder="e.g. Ramesh Babu V."
+                placeholder="Enter your full name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-2xl bg-stone-50 border border-stone-200 text-xs text-stone-800 placeholder-stone-400 outline-none focus:ring-2 focus:ring-[#FFB7B2]/70 focus:border-transparent"
@@ -209,6 +215,7 @@ export default function RegisterHelperPage() {
                   onChange={(e) => setGender(e.target.value as any)}
                   className="w-full px-3 py-2.5 rounded-2xl bg-stone-50 border border-stone-200 text-xs text-stone-800 outline-none focus:ring-2 focus:ring-[#FFB7B2]/70"
                 >
+                  <option value="">Select Gender</option>
                   <option value="Female">Female</option>
                   <option value="Male">Male</option>
                   <option value="Other">Other</option>
@@ -219,11 +226,12 @@ export default function RegisterHelperPage() {
                 <label className="block text-xs font-semibold text-stone-700 mb-1">Age</label>
                 <input
                   type="number"
-                  min="20"
-                  max="65"
+                  min="18"
+                  max="70"
+                  placeholder="e.g. 35"
                   value={age}
-                  onChange={(e) => setAge(Number(e.target.value))}
-                  className="w-full px-3.5 py-2.5 rounded-2xl bg-stone-50 border border-stone-200 text-xs text-stone-800 outline-none focus:ring-2 focus:ring-[#FFB7B2]/70"
+                  onChange={(e) => setAge(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-2xl bg-stone-50 border border-stone-200 text-xs text-stone-800 placeholder-stone-400 outline-none focus:ring-2 focus:ring-[#FFB7B2]/70"
                 />
               </div>
             </div>
@@ -307,9 +315,10 @@ export default function RegisterHelperPage() {
                   type="number"
                   min="0"
                   max="40"
+                  placeholder="e.g. 3"
                   value={experienceYears}
-                  onChange={(e) => setExperienceYears(Number(e.target.value))}
-                  className="w-full px-3.5 py-2.5 rounded-2xl bg-stone-50 border border-stone-200 text-xs text-stone-800 outline-none focus:ring-2 focus:ring-[#FFB7B2]/70"
+                  onChange={(e) => setExperienceYears(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-2xl bg-stone-50 border border-stone-200 text-xs text-stone-800 placeholder-stone-400 outline-none focus:ring-2 focus:ring-[#FFB7B2]/70"
                 />
               </div>
             </div>
@@ -429,10 +438,10 @@ export default function RegisterHelperPage() {
               </label>
               <input
                 type="text"
-                placeholder="e.g. ramesh@upi or 9848022338@paytm"
+                placeholder="e.g. 9848022338@paytm or name@okaxis"
                 value={upiId}
                 onChange={(e) => setUpiId(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-2xl bg-stone-50 border border-stone-200 text-xs text-stone-800 outline-none focus:ring-2 focus:ring-[#FFB7B2]/70"
+                className="w-full px-3.5 py-2.5 rounded-2xl bg-stone-50 border border-stone-200 text-xs text-stone-800 placeholder-stone-400 outline-none focus:ring-2 focus:ring-[#FFB7B2]/70"
               />
             </div>
 

@@ -32,12 +32,12 @@ export default function EditHelperProfileModal({ isOpen, helper, onClose, onUpda
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
-  const [age, setAge] = useState<number | string>(35);
+  const [age, setAge] = useState<number | string>('');
   const [gender, setGender] = useState<'Female' | 'Male' | 'Other'>('Female');
   const [baseCity, setBaseCity] = useState('');
   const [serviceCitiesStr, setServiceCitiesStr] = useState('');
   const [helperType, setHelperType] = useState<'live_in' | 'visiting' | 'both'>('live_in');
-  const [experienceYears, setExperienceYears] = useState<number | string>(3);
+  const [experienceYears, setExperienceYears] = useState<number | string>('');
   const [expectedSalary, setExpectedSalary] = useState('');
   const [dailyRate, setDailyRate] = useState('');
   const [bio, setBio] = useState('');
