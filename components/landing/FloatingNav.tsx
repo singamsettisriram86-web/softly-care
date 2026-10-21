@@ -32,12 +32,36 @@ export default function FloatingNav() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Lock background scroll when mobile drawer is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = prevOverflow;
+      };
+    }
+  }, [mobileMenuOpen]);
+
   return (
     <>
-      <header className="fixed top-4 left-0 right-0 z-40 flex justify-center px-4">
+      {/* Mobile Drawer Dimmed Backdrop */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-stone-950/60 backdrop-blur-xs z-40 md:hidden animate-in fade-in duration-200"
+          onClick={() => setMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      <header
+        className={`fixed top-4 left-0 right-0 flex justify-center px-4 transition-all duration-200 ${
+          mobileMenuOpen ? 'z-50' : 'z-40'
+        }`}
+      >
         <nav
           aria-label="Main Navigation"
-          className="w-[calc(100%-32px)] max-w-5xl h-14 bg-white/80 backdrop-blur-[20px] border border-stone-200/70 rounded-full px-4 sm:px-6 flex items-center justify-between shadow-soft transition-all duration-300 relative"
+          className="w-[calc(100%-32px)] max-w-5xl h-14 bg-white/95 backdrop-blur-[20px] border border-stone-200/90 rounded-full px-4 sm:px-6 flex items-center justify-between shadow-soft transition-all duration-300 relative z-50"
         >
           {/* Brand / Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
@@ -210,7 +234,7 @@ export default function FloatingNav() {
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 flex items-center justify-center text-stone-600 transition-colors"
+              className="md:hidden w-9 h-9 rounded-full bg-stone-100 hover:bg-stone-200 active:scale-95 flex items-center justify-center text-stone-700 transition-all"
               aria-label="Toggle navigation menu"
             >
               {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
@@ -219,14 +243,14 @@ export default function FloatingNav() {
 
           {/* Mobile Drawer */}
           {mobileMenuOpen && (
-            <div className="md:hidden absolute top-full left-0 right-0 mt-2 bg-white/98 backdrop-blur-md rounded-3xl border border-stone-200 shadow-xl p-4 space-y-2 z-50 animate-in fade-in duration-150">
+            <div className="md:hidden absolute top-full left-0 right-0 mt-3 bg-white rounded-3xl border border-stone-200/90 shadow-2xl p-3.5 space-y-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
               <Link
                 href="/helpers/browse"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between px-3.5 py-2.5 rounded-2xl bg-stone-50 hover:bg-stone-100 text-xs font-bold text-stone-900"
+                className="flex items-center justify-between px-3.5 py-2.5 rounded-2xl bg-stone-50 hover:bg-stone-100 text-xs font-bold text-stone-900 transition-colors"
               >
                 <span>🔍 Find an Elder Caregiver</span>
-                <span className="text-[10px] bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded-full">
+                <span className="text-[10px] bg-amber-100 text-amber-900 px-2 py-0.5 rounded-full font-bold">
                   Marketplace
                 </span>
               </Link>
@@ -234,38 +258,49 @@ export default function FloatingNav() {
               <Link
                 href="/helpers/jobs"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between px-3.5 py-2.5 rounded-2xl bg-stone-50 hover:bg-stone-100 text-xs font-bold text-stone-900"
+                className="flex items-center justify-between px-3.5 py-2.5 rounded-2xl bg-stone-50 hover:bg-stone-100 text-xs font-bold text-stone-900 transition-colors"
               >
-                <span>🩺 Helper Jobs &amp; Categories</span>
-                <span className="text-[10px] text-stone-400">4 Types</span>
+                <span>🩺 Helper Jobs &amp; Roles</span>
+                <span className="text-[10px] text-stone-500 font-medium">4 Types</span>
               </Link>
 
               <Link
                 href="/helpers/register"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between px-3.5 py-2.5 rounded-2xl bg-[#FFB7B2]/30 hover:bg-[#FFB7B2]/50 text-xs font-bold text-stone-900"
+                className="flex items-center justify-between px-3.5 py-2.5 rounded-2xl bg-[#FFB7B2]/30 hover:bg-[#FFB7B2]/50 text-xs font-bold text-stone-900 transition-colors"
               >
                 <span>📝 Register as a Helper</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
 
               <Link
-                href="/#how-it-works"
+                href="/helpers/profile"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium text-stone-700 hover:bg-stone-50"
+                className="flex items-center justify-between px-3.5 py-2.5 rounded-2xl bg-stone-50 hover:bg-stone-100 text-xs font-bold text-stone-900 transition-colors"
               >
-                <Calendar className="w-3.5 h-3.5 text-stone-400" />
-                <span>How It Works</span>
+                <span>👤 Caregiver Portal &amp; Profile</span>
+                <span className="text-[10px] text-stone-400">Portal</span>
               </Link>
 
-              <Link
-                href="/#faq"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium text-stone-700 hover:bg-stone-50"
-              >
-                <HelpCircle className="w-3.5 h-3.5 text-stone-400" />
-                <span>FAQ</span>
-              </Link>
+              <div className="pt-2 border-t border-stone-100 space-y-1">
+                <Link
+                  href="/#how-it-works"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium text-stone-700 hover:bg-stone-50 transition-colors"
+                >
+                  <Calendar className="w-3.5 h-3.5 text-stone-400" />
+                  <span>How It Works</span>
+                </Link>
+
+                <Link
+                  href="/#faq"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium text-stone-700 hover:bg-stone-50 transition-colors"
+                >
+                  <HelpCircle className="w-3.5 h-3.5 text-stone-400" />
+                  <span>FAQ</span>
+                </Link>
+              </div>
             </div>
           )}
         </nav>
