@@ -19,6 +19,11 @@ export const metadata: Metadata = {
     statusBarStyle: 'default',
     title: 'Softly Care',
   },
+  verification: {
+    other: {
+      'facebook-domain-verification': 'yc45a7jtiwpd6rlhjn9l65qtalwpii',
+    },
+  },
 };
 
 export const viewport: Viewport = {
@@ -37,6 +42,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <meta name="facebook-domain-verification" content="yc45a7jtiwpd6rlhjn9l65qtalwpii" />
         {/* iOS PWA: Add to Home Screen support */}
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
