@@ -50,6 +50,7 @@ export const metadata: Metadata = {
     title: 'Softly Care',
   },
   verification: {
+    google: 'google9a46716ffa9f3eef',
     other: {
       'facebook-domain-verification': 'yc45a7jtiwpd6rlhjn9l65qtalwpii',
     },
@@ -72,6 +73,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <meta name="google-site-verification" content="google9a46716ffa9f3eef" />
         <meta name="facebook-domain-verification" content="yc45a7jtiwpd6rlhjn9l65qtalwpii" />
         <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png" />
         <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
