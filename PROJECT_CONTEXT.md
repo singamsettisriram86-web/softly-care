@@ -62,6 +62,10 @@
 ## 5. Subscription & Business Rules
 - **Free Trial Policy:** **3-Day Free Trial** (STRICT: Never 14 days to preserve WhatsApp credits).
 - **Trial Quota:** 150 WhatsApp reminders max per family space during trial.
+- **Doctor Calendar Sync:**
+  - 1-Click Google Calendar export (`getGoogleCalendarUrl`) prefilling doctor name, clinic address, notes, and accompanying helper.
+  - Standard RFC 5545 `.ics` export (`generateIcsContent`) for Apple Calendar, Outlook, and native phone calendars.
+  - Automated WhatsApp alerts with 1-tap Google Calendar sync link whenever a doctor visit is scheduled.
 - **Post-Trial Paywall:** At day 4, reminders pause until upgraded to a paid plan.
 - **Pricing Tiers:**
   - **Starter:** ₹499 / month
