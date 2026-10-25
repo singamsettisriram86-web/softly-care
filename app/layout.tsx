@@ -7,8 +7,19 @@ import MobileBottomNav from '@/components/MobileBottomNav';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://softlys.online'),
-  title: 'Softly — Elderly Care Coordinator',
-  description: 'A digital living room for coordinating elderly parent care, medications, doctor appointments, and local helpers.',
+  title: 'Softly — Elderly Care Coordinator & Medication Reminders',
+  description: 'A digital living room for coordinating elderly parent care, daily WhatsApp medication reminders, doctor appointments, and local verified helper accompaniment.',
+  keywords: [
+    'Softly',
+    'Softly Care',
+    'Softly Care Coordinator',
+    'elderly care coordinator India',
+    'WhatsApp medication reminder for parents',
+    'elderly parent care from abroad',
+    'local helper for elderly parents',
+    'doctor appointment calendar sync',
+    'diabetes BP medication tracker India',
+  ],
   manifest: '/manifest.json',
   icons: {
     icon: [
