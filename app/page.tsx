@@ -12,7 +12,7 @@ import VisitorTrialModal from '@/components/landing/VisitorTrialModal';
 export default function LandingPage() {
   return (
     <div className="relative min-h-screen bg-softly-bg text-softly-text overflow-hidden">
-      {/* 14-Day Free Trial Visitor Popup */}
+      {/* 3-Day Free Trial Visitor Popup */}
       <VisitorTrialModal />
 
       {/* Floating Pill Nav */}

@@ -33,7 +33,7 @@ export default function PostRegistrationTrialModal({
 
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFE4E1] border border-[#FFB7B2]/60 text-[11px] font-bold text-stone-900 mb-2">
             <Sparkles className="w-3.5 h-3.5 text-stone-900" />
-            <span>14-DAY COMPLIMENTARY TRIAL ACTIVE</span>
+            <span>3-DAY COMPLIMENTARY TRIAL ACTIVE</span>
           </div>
 
           <h3 className="text-2xl sm:text-3xl font-extrabold text-stone-900 tracking-tight">
@@ -41,7 +41,7 @@ export default function PostRegistrationTrialModal({
           </h3>
 
           <p className="text-xs text-stone-600 mt-2 leading-relaxed">
-            Your 14-day free trial has started. All automated WhatsApp medication reminders, helper accompaniment, and clinical appointments are unlocked.
+            Your 3-day free trial has started. All automated WhatsApp medication reminders, helper accompaniment, and clinical appointments are unlocked.
           </p>
         </div>
 
@@ -94,14 +94,14 @@ export default function PostRegistrationTrialModal({
             onClick={onContinueTrial}
             className="w-full py-3.5 rounded-full text-xs font-bold text-stone-700 border border-stone-300 hover:bg-stone-50 transition-colors flex items-center justify-center gap-2"
           >
-            <span>Skip for Now &amp; Continue 14-Day Trial →</span>
+            <span>Skip for Now &amp; Continue 3-Day Trial →</span>
           </button>
         </div>
 
         {/* Reassurance */}
         <p className="text-[11px] text-stone-400 text-center mt-4 flex items-center justify-center gap-1.5">
           <ShieldCheck className="w-3.5 h-3.5 text-stone-400" />
-          <span>Full trial access for 14 days · You can upgrade anytime</span>
+          <span>Full trial access for 3 days · You can upgrade anytime</span>
         </p>
       </div>
     </div>

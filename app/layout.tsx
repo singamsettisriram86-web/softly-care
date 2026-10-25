@@ -6,13 +6,32 @@ import PwaBackHandler from '@/components/PwaBackHandler';
 import MobileBottomNav from '@/components/MobileBottomNav';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://softlys.online'),
   title: 'Softly — Elderly Care Coordinator',
   description: 'A digital living room for coordinating elderly parent care, medications, doctor appointments, and local helpers.',
   manifest: '/manifest.json',
   icons: {
-    icon: '/favicon.ico',
-    shortcut: '/favicon-32x32.png',
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/favicon-48x48.png', sizes: '48x48', type: 'image/png' },
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+    ],
+    shortcut: '/favicon-48x48.png',
     apple: '/apple-touch-icon.png',
+  },
+  openGraph: {
+    title: 'Softly — Elderly Care Coordinator',
+    description: 'A digital living room for coordinating elderly parent care, medications, doctor appointments, and local helpers.',
+    url: 'https://softlys.online',
+    siteName: 'Softly Care',
+    images: [
+      {
+        url: '/logo.png',
+        width: 560,
+        height: 560,
+        alt: 'Softly Care Sprout Logo',
+      },
+    ],
   },
   appleWebApp: {
     capable: true,
@@ -43,6 +62,24 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <meta name="facebook-domain-verification" content="yc45a7jtiwpd6rlhjn9l65qtalwpii" />
+        <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+        {/* Schema.org Organization Structured Data for Google Search Favicon & Knowledge Graph */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'Organization',
+              name: 'Softly',
+              url: 'https://softlys.online',
+              logo: 'https://softlys.online/logo.png',
+              sameAs: [
+                'https://softlys.online',
+              ],
+            }),
+          }}
+        />
         {/* iOS PWA: Add to Home Screen support */}
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />

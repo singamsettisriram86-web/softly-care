@@ -99,7 +99,7 @@ function RegisterContent() {
       if (nextDest === '/subscribe') {
         router.push('/subscribe?pay=1');
       } else {
-        // Show the 14-day trial & subscription option modal
+        // Show the 3-day trial & subscription option modal
         setCreatedFamily({
           id: data.family.id,
           name: data.family.name || calculatedFamilyName,

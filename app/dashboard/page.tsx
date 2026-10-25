@@ -642,7 +642,7 @@ function CaregiverDashboardContent() {
                   >
                     {(() => {
                       if (isTrialExpired) return 'Trial Expired · Subscribe to Unlock';
-                      if (!activeFamily?.trial_ends_at) return '14-Day Free Trial';
+                      if (!activeFamily?.trial_ends_at) return '3-Day Free Trial';
                       const msLeft = new Date(activeFamily.trial_ends_at).getTime() - Date.now();
                       const daysLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24));
                       return `${daysLeft} Day${daysLeft > 1 ? 's' : ''} Left in Trial`;
@@ -694,7 +694,7 @@ function CaregiverDashboardContent() {
                 🔒
               </span>
               <div>
-                <h4 className="text-xs sm:text-sm font-bold text-red-900">Your 14-Day Free Trial Has Concluded</h4>
+                <h4 className="text-xs sm:text-sm font-bold text-red-900">Your 3-Day Free Trial Has Concluded</h4>
                 <p className="text-[11px] text-red-700 mt-0.5">
                   Proactive WhatsApp alerts and scheduling are locked. Please choose a plan to restore uninterrupted care for your parents.
                 </p>
@@ -1253,7 +1253,7 @@ function CaregiverDashboardContent() {
         onSelect={handleSelectChoice}
       />
 
-      {/* 14-Day Trial Expired Paywall Gating Modal */}
+      {/* 3-Day Trial Expired Paywall Gating Modal */}
       <TrialExpiredPaywallModal
         isOpen={showTrialExpiredModal}
         familyId={activeFamily?.id}

@@ -80,7 +80,7 @@ export default function TermsPage() {
           <section className="space-y-3">
             <h2 className="text-base sm:text-lg font-bold text-stone-900">5. Free Trial &amp; Renewal</h2>
             <p>
-              New subscribers are eligible for a 14-day free trial. You may cancel your subscription at any time during or after the trial period through the dashboard or by contacting support. Unless cancelled, subscriptions renew automatically according to the selected billing rhythm.
+              New subscribers are eligible for a 3-day free trial. You may cancel your subscription at any time during or after the trial period through the dashboard or by contacting support. Unless cancelled, subscriptions renew automatically according to the selected billing rhythm.
             </p>
           </section>
 

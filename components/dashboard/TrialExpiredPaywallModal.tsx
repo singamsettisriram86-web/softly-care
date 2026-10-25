@@ -58,7 +58,7 @@ export default function TrialExpiredPaywallModal({
           </div>
 
           <h3 className="text-2xl sm:text-3xl font-extrabold text-stone-900 tracking-tight leading-snug">
-            Your 14-Day Free Trial Has Ended
+            Your 3-Day Free Trial Has Ended
           </h3>
 
           <p className="text-xs text-stone-600 mt-2 leading-relaxed">

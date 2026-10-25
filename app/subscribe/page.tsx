@@ -189,7 +189,7 @@ function SubscribeContent() {
 
           <div className="mt-4 flex items-center justify-center gap-4 text-xs font-semibold text-stone-500">
             <span className="flex items-center gap-1.5">
-              <Check className="w-3.5 h-3.5 text-emerald-600" /> 14-Day Free Trial
+              <Check className="w-3.5 h-3.5 text-emerald-600" /> 3-Day Free Trial
             </span>
             <span>•</span>
             <span className="flex items-center gap-1.5">
@@ -265,7 +265,7 @@ function SubscribeContent() {
                     <span className="text-xs text-stone-500 font-medium">/ month</span>
                   </div>
                   <p className="text-xs text-stone-500 mb-6">
-                    Billed monthly. 14 days free before first charge.
+                    Billed monthly. 3 days free before first charge.
                   </p>
 
                   <ul className="space-y-2.5 text-xs text-stone-700">

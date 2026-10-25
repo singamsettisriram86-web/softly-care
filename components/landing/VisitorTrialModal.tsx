@@ -69,7 +69,7 @@ export default function VisitorTrialModal() {
         {/* Badge */}
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFE4E1] border border-[#FFB7B2]/60 text-[11px] font-extrabold text-stone-900 mb-3 shadow-2xs">
           <Sparkles className="w-3.5 h-3.5 text-stone-900" />
-          <span>START YOUR 14-DAY FREE TRIAL</span>
+          <span>START YOUR 3-DAY FREE TRIAL</span>
         </div>
 
         {/* Title */}
@@ -85,7 +85,7 @@ export default function VisitorTrialModal() {
         <ul className="my-5 space-y-2.5 text-xs text-stone-700 bg-stone-50/80 p-4 rounded-2xl border border-stone-100">
           <li className="flex items-start gap-2">
             <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-            <span><strong>Full 14-Day Free Access</strong> · No credit card required</span>
+            <span><strong>Full 3-Day Free Access</strong> · No credit card required</span>
           </li>
           <li className="flex items-start gap-2">
             <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
@@ -109,7 +109,7 @@ export default function VisitorTrialModal() {
             className="w-full py-3.5 rounded-full font-bold text-xs text-stone-900 shadow-soft transition-transform active:scale-95 flex items-center justify-center gap-2 hover:opacity-95"
             style={{ background: '#FFB7B2' }}
           >
-            <span>Sign Up for 14-Day Free Trial</span>
+            <span>Sign Up for 3-Day Free Trial</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
 

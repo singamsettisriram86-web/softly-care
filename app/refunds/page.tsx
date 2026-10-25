@@ -28,7 +28,7 @@ export default function RefundsPage() {
         {/* Highlights banner */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           <div className="p-5 rounded-3xl bg-white border border-stone-200/90 shadow-2xs text-center space-y-1.5">
-            <span className="text-2xl font-black text-stone-900">14 Days</span>
+            <span className="text-2xl font-black text-stone-900">3 Days</span>
             <h4 className="text-xs font-bold text-stone-800">Free Trial Period</h4>
             <p className="text-[11px] text-stone-500">Cancel before the trial ends and you will not be charged a single rupee.</p>
           </div>
