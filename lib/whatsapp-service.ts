@@ -283,6 +283,14 @@ export class WhatsAppService {
           takenByName,
         };
       }
+    } else {
+      // Friendly auto-reply for greeting / general message to confirm connection
+      try {
+        const welcomeBody = `👋 Hello! Welcome to *Softly — Elderly Care Coordinator*.\n\nYour automated medication reminders and care coordinator are live! Reply *DONE* or *TAKEN* whenever you take your scheduled medications. 🌿`;
+        await this.sendRawMessage(from, welcomeBody, undefined, targetFamilyId);
+      } catch (e) {
+        console.warn('[WhatsAppService] Welcome reply skipped:', e);
+      }
     }
 
     return {
