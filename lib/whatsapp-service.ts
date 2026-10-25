@@ -300,6 +300,116 @@ export class WhatsAppService {
       takenByName,
     };
   }
+
+  async sendTemplateMessage(params: {
+    to: string;
+    templateName: string;
+    languageCode?: string;
+    bodyParameters?: string[];
+  }) {
+    if (!this.isMetaConfigured()) return { success: false, error: 'Meta not configured' };
+    const { to, templateName, languageCode = 'en_US', bodyParameters = [] } = params;
+    try {
+      const metaRecipient = this.formatPhoneForMeta(to);
+      const endpoint = `https://graph.facebook.com/v21.0/${process.env.META_PHONE_NUMBER_ID}/messages`;
+
+      const components: any[] = [];
+      if (bodyParameters.length > 0) {
+        components.push({
+          type: 'body',
+          parameters: bodyParameters.map((p) => ({ type: 'text', text: p })),
+        });
+      }
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.META_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          recipient_type: 'individual',
+          to: metaRecipient,
+          type: 'template',
+          template: {
+            name: templateName,
+            language: { code: languageCode },
+            ...(components.length > 0 ? { components } : {}),
+          },
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok || data.error) {
+        console.warn(`[WhatsApp Template Error - ${templateName}]:`, data.error?.message);
+        return { success: false, error: data.error?.message, code: data.error?.code };
+      }
+      return { success: true, messageId: data.messages?.[0]?.id };
+    } catch (e: any) {
+      console.warn('[WhatsApp Template Exception]:', e.message);
+      return { success: false, error: e.message };
+    }
+  }
+
+  async sendRegistrationWelcome(params: {
+    familyName: string;
+    caregiverName: string;
+    caregiverPhone?: string;
+    careMembers?: { name: string; relation: string; phone?: string }[];
+  }) {
+    const { familyName, caregiverName, caregiverPhone, careMembers = [] } = params;
+
+    // 1. Send to Caregiver (Son/Daughter)
+    if (caregiverPhone && caregiverPhone.trim()) {
+      const eldersSummary = careMembers.length > 0
+        ? careMembers.map((m) => `${m.relation} (${m.name})`).join(', ')
+        : 'your family';
+
+      let res = await this.sendTemplateMessage({
+        to: caregiverPhone,
+        templateName: 'softly_caregiver_welcome',
+        bodyParameters: [caregiverName, eldersSummary],
+      });
+
+      if (!res.success) {
+        res = await this.sendTemplateMessage({
+          to: caregiverPhone,
+          templateName: 'softly_welcome',
+        });
+      }
+
+      if (!res.success) {
+        const textBody = `👋 Hello ${caregiverName}! Welcome to *Softly — Elderly Care Coordinator*.\n\nYour family space for *${eldersSummary}* has been successfully registered. You will receive real-time care updates and medication tracking here. 🌿`;
+        await this.sendRawMessage(caregiverPhone, textBody);
+      }
+    }
+
+    // 2. Send to each registered Parent/Elder who has a WhatsApp number
+    for (const member of careMembers) {
+      if (member.phone && member.phone.trim()) {
+        const registeredBy = caregiverName ? `your family (${caregiverName})` : 'your family';
+
+        let res = await this.sendTemplateMessage({
+          to: member.phone,
+          templateName: 'softly_elder_welcome',
+          bodyParameters: [member.name, registeredBy],
+        });
+
+        if (!res.success) {
+          res = await this.sendTemplateMessage({
+            to: member.phone,
+            templateName: 'softly_welcome',
+          });
+        }
+
+        if (!res.success) {
+          const textBody = `👋 Hello ${member.name}! You have been registered on *Softly Care* by ${registeredBy}.\n\nYour automated medication reminders and care coordinator are active. Reply *TAKEN* whenever you take your medicines. 🌿`;
+          await this.sendRawMessage(member.phone, textBody);
+        }
+      }
+    }
+  }
 }
 
 export const whatsappService = new WhatsAppService();

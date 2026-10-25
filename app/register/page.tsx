@@ -11,9 +11,10 @@ interface CareMember {
   relation: string;
   name: string;
   city: string;
+  phone?: string;
 }
 
-const emptyMember = (): CareMember => ({ relation: 'Father', name: '', city: '' });
+const emptyMember = (): CareMember => ({ relation: 'Father', name: '', city: '', phone: '' });
 
 function RegisterContent() {
   const router = useRouter();
@@ -242,6 +243,20 @@ function RegisterContent() {
                       style={{ color: '#292524' }}
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5" style={{ color: '#78716C' }}>
+                    {member.relation}&apos;s WhatsApp Number (Optional)
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="e.g. +91 98765 43210 (For automated reminders)"
+                    value={member.phone || ''}
+                    onChange={(e) => updateMember(idx, 'phone', e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-stone-200 bg-stone-50 text-sm outline-none focus:border-stone-400 transition-colors"
+                    style={{ color: '#292524' }}
+                  />
                 </div>
               </div>
             ))}

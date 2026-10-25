@@ -191,7 +191,7 @@ export class SupabaseDataRepository {
     caregiverCity?: string;
     userId?: string;
     userEmail?: string;
-    careMembers?: { relation: string; name: string; city: string }[];
+    careMembers?: { relation: string; name: string; city: string; phone?: string }[];
     helperName?: string;
     helperPhone?: string;
     helperUpi?: string;
@@ -241,7 +241,7 @@ export class SupabaseDataRepository {
         family_id: familyId,
         role: 'elder',
         name: cm.name.trim(),
-        phone: '',
+        phone: cm.phone?.trim() || '',
         city: cm.city?.trim() || 'Hometown',
         relation_type: cm.relation,
       });

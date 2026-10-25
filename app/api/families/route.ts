@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { memoryDataRepository } from '@/lib/data-repository';
+import { whatsappService } from '@/lib/whatsapp-service';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -103,6 +104,18 @@ export async function POST(req: NextRequest) {
       helperUpi,
       helperType: helperType || 'visiting',
     });
+
+    // Dispatch automated welcome WhatsApp messages asynchronously to Caregiver & Parents
+    try {
+      whatsappService.sendRegistrationWelcome({
+        familyName,
+        caregiverName,
+        caregiverPhone,
+        careMembers: careMembers || [],
+      }).catch((err) => console.warn('[Registration WhatsApp] Dispatch error:', err?.message));
+    } catch (e: any) {
+      console.warn('[Registration WhatsApp] Async launch error:', e?.message);
+    }
 
     return NextResponse.json(
       { success: true, family: result.family, members: result.members },
