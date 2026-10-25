@@ -90,27 +90,34 @@ export default function AppointmentCard({ appointment }: Props) {
         )}
       </div>
 
-      <div className="pt-3 border-t border-stone-100 flex flex-wrap items-center justify-between gap-2">
-        {/* Google Calendar Link */}
-        <a
-          href={gCalUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs font-medium text-stone-700 hover:text-stone-950 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-100 hover:bg-stone-200 transition-colors"
-        >
-          <ExternalLink className="w-3.5 h-3.5" />
-          <span>Google Calendar</span>
-        </a>
+      <div className="pt-3 border-t border-stone-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+        <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">
+          Calendar Sync
+        </span>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Google Calendar Link */}
+          <a
+            href={gCalUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs font-semibold text-blue-700 hover:text-blue-900 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors shadow-2xs"
+          >
+            <Calendar className="w-3.5 h-3.5 text-blue-600" />
+            <span>Google Calendar</span>
+            <ExternalLink className="w-3 h-3 opacity-60" />
+          </a>
 
-        {/* Download ICS */}
-        <button
-          type="button"
-          onClick={handleDownloadIcs}
-          className="text-xs font-medium text-stone-700 hover:text-stone-950 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-100 hover:bg-stone-200 transition-colors"
-        >
-          <Download className="w-3.5 h-3.5" />
-          <span>Save .ics</span>
-        </button>
+          {/* Download ICS */}
+          <button
+            type="button"
+            onClick={handleDownloadIcs}
+            className="text-xs font-semibold text-stone-700 hover:text-stone-950 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-100 hover:bg-stone-200 border border-stone-200 transition-colors shadow-2xs"
+            title="Download .ics for Apple Calendar, Outlook, or phone calendar"
+          >
+            <Download className="w-3.5 h-3.5 text-stone-600" />
+            <span>Apple / .ics</span>
+          </button>
+        </div>
       </div>
     </div>
   );
